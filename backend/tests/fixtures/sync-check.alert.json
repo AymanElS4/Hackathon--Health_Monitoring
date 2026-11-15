@@ -1,0 +1,115 @@
+{
+  "clientCheckId": "7b0c2a52-4a8e-4c41-9f0e-2d1b6f3a9c02",
+  "crewId": "crew-a1b2c3",
+  "kind": "daily",
+  "missionDay": 24,
+  "check": {
+    "id": "2026-11-16T08:00:00.000Z",
+    "observations": [
+      {
+        "indicator": "sleep_hours",
+        "source": "voice",
+        "confirmed": true,
+        "simulated": false,
+        "at": "2026-11-16T08:00:00.000Z",
+        "value": 7
+      },
+      {
+        "indicator": "mood",
+        "source": "voice",
+        "confirmed": true,
+        "simulated": false,
+        "at": "2026-11-16T08:00:00.000Z",
+        "value": 4
+      },
+      {
+        "indicator": "resting_heart_rate",
+        "source": "device",
+        "confirmed": true,
+        "simulated": true,
+        "at": "2026-11-16T08:00:00.000Z",
+        "value": 128
+      },
+      {
+        "indicator": "blood_pressure",
+        "source": "device",
+        "confirmed": true,
+        "simulated": true,
+        "at": "2026-11-16T08:00:00.000Z",
+        "value": {
+          "systolic": 118,
+          "diastolic": 76
+        }
+      },
+      {
+        "indicator": "body_temperature",
+        "source": "device",
+        "confirmed": true,
+        "simulated": true,
+        "at": "2026-11-16T08:00:00.000Z",
+        "value": 36.6
+      },
+      {
+        "indicator": "oxygen_saturation",
+        "source": "device",
+        "confirmed": true,
+        "simulated": true,
+        "at": "2026-11-16T08:00:00.000Z",
+        "value": 98
+      }
+    ],
+    "symptoms": [
+      "chest_pain"
+    ],
+    "readings": {
+      "sleep": {
+        "sensor": "sleep",
+        "level": "green",
+        "phase": "confirmed",
+        "value": "7 h",
+        "outsideNormal": false,
+        "teamCriterion": false,
+        "reason": null
+      },
+      "pulse": {
+        "sensor": "pulse",
+        "level": "red",
+        "phase": "confirmed",
+        "value": "128 lpm",
+        "outsideNormal": true,
+        "teamCriterion": true,
+        "reason": "resting_heart_rate"
+      },
+      "pressure": {
+        "sensor": "pressure",
+        "level": "green",
+        "phase": "confirmed",
+        "value": "118/76",
+        "outsideNormal": false,
+        "teamCriterion": false,
+        "reason": null
+      },
+      "temperature": {
+        "sensor": "temperature",
+        "level": "green",
+        "phase": "confirmed",
+        "value": "36.6 °C",
+        "outsideNormal": false,
+        "teamCriterion": false,
+        "reason": null
+      },
+      "oxygen": {
+        "sensor": "oxygen",
+        "level": "green",
+        "phase": "confirmed",
+        "value": "98 %",
+        "outsideNormal": false,
+        "teamCriterion": false,
+        "reason": null
+      }
+    },
+    "verdict": "alert",
+    "actionKey": "action.red",
+    "simulated": false
+  }
+}

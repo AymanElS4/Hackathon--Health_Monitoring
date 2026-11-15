@@ -22,6 +22,9 @@ Body `SyncCheck`:
 - `200 {"status":"duplicate","id":"<server uuid>"}` — same `clientCheckId` already stored (FR-007)
 - `400 {"error":"invalid_check","issues":[...]}` — contract or envelope violation (FR-008),
   including duplicate indicators and `kind` ≠ `daily`
+- `400 {"error":"invalid_check","issues":[]}` — data rejected by the database (SQLSTATE class 22/23)
+- `400 {"error":"invalid_check","issues":[]}` — malformed JSON, checked before the code: the body parser
+  runs before the guard, so malformed JSON without a code gets 400, not 401
 - `401 {"error":"invalid_code"}` · `429 {"error":"too_many_attempts"}`
 - `503 {"error":"database_unavailable"}` — retry later; nothing stored
 
@@ -49,4 +52,4 @@ Body `{ "decision": "manage_on_base" | "consult_surgeon" | "prepare_return" }`
 - `404 not_found` · `409 {"error":"already_decided"}` · `400 invalid_decision`
 
 ## Page
-`GET /cirujano` → HTML (Spanish strings injected from `messages.es.ts`), assets under `/cirujano/assets/`.
+`GET /cirujano` → HTML. `window.MESSAGES` is served from `/cirujano/assets/messages.js`, generated from `messages.es.ts`, no inline script (CSP `script-src 'self'`). Other assets under `/cirujano/assets/`.

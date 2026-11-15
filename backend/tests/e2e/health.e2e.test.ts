@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../../src/app.module';
+import { configureApp } from '../../src/adapters/http/configure-app';
 import { FakeDatabaseProbe } from '../../src/adapters/memory/fake-database-probe';
 import { API_PREFIX } from '../../src/config/constants';
 import { type Env } from '../../src/config/env';
@@ -30,7 +31,7 @@ describe('GET /api/v1/health (e2e)', () => {
       .useValue(probe)
       .compile();
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix(API_PREFIX);
+    configureApp(app);
     await app.init();
   });
 
