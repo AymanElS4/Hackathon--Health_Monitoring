@@ -56,7 +56,7 @@ describe('messages.es', () => {
     }
   });
 
-  it.todo('every key used in src/config/checkinScripts.ts exists (enable in T032)');
+  it.todo('every key used in frontend/src/config/checkinScripts.ts exists (enable in T047)');
 
   it('no verdict.* or action.* text contains a blocklisted disease or medication word', () => {
     const keys = Object.keys(messages).filter(

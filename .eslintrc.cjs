@@ -66,7 +66,7 @@ module.exports = {
                 from: 'composition',
                 allow: ['composition', 'domain', 'application', 'ports', 'adapters', 'config', 'libs'],
               },
-              { from: 'app', allow: ['app', 'composition', 'ui', 'config'] },
+              { from: 'app', allow: ['app', 'composition', 'ui', 'config', 'libs'] },
               { from: 'backend', allow: ['backend', 'libs'] },
             ],
           },
@@ -85,6 +85,10 @@ module.exports = {
               {
                 group: ['**/backend', '**/backend/**'],
                 message: 'frontend must not import backend; share only libs/*.',
+              },
+              {
+                group: ['@base-vital/frontend', '@base-vital/frontend/**', '@base-vital/*/src/**'],
+                message: 'Inside frontend use relative imports; import libs only through their package entry.',
               },
             ],
           },
@@ -147,6 +151,18 @@ module.exports = {
       files: ['frontend/src/ui/**/*.{ts,tsx}', 'frontend/src/App.tsx'],
       rules: {
         'react/jsx-no-literals': ['error', { noStrings: true, ignoreProps: true }],
+        // Overrides replace options, so the adapter selector from the source-files block is repeated here.
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector: 'NewExpression[callee.name=/(Adapter|Repository|Devices|Recognizer|Synth|Agenda|Clock|Connectivity)$/]',
+            message: 'Adapters are created only in frontend/src/composition-root.ts (inject them through ports).',
+          },
+          {
+            selector: "JSXAttribute[name.name=/^(aria-label|title|placeholder|alt)$/] > Literal",
+            message: 'UI text only in frontend/src/config/messages.es.ts.',
+          },
+        ],
       },
     },
     {

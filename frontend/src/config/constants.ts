@@ -42,6 +42,6 @@ export const LEVEL_COLORS = {
 
 /**
  * Fallback screen positions for sensor dots when the .glb node cannot be
- * resolved. Empty placeholder; T057 fills it.
+ * resolved. Empty placeholder; T076 fills it.
  */
 export const FALLBACK_DOTS: Partial<Record<SensorKey, { x: number; y: number }>> = {};

@@ -95,6 +95,6 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     agenda: new StaticAgenda(DEMO_AGENDA),
     clock,
     voiceMode: selectVoiceMode(scenario, search),
-    // T037: wire SpeechRecognizerPort / SpeechSynthesizerPort here
+    // T052: wire SpeechRecognizerPort / SpeechSynthesizerPort here
   };
 }

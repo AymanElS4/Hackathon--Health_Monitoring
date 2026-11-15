@@ -14,7 +14,7 @@ export interface DemoScenarioSelectProps {
   repository: CheckRepositoryPort;
   /** Called after the scenario has been persisted, cleared and re-seeded. */
   onChanged: (id: DemoScenarioId) => void;
-  /** Re-seeds history for the new scenario (wired in T068). */
+  /** Re-seeds history for the new scenario (wired in T088). */
   reseed?: (id: DemoScenarioId) => Promise<void>;
   /** Storage that keeps the scenario id; defaults to the browser localStorage. */
   storage?: StorageLike;
