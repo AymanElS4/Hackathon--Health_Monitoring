@@ -116,6 +116,17 @@ export const HOME_REFRESH_MS = 60_000;
 /** Route of the history screen (US6). Home and the check-in end card link to it. */
 export const HISTORY_PATH = '/historial';
 
+/** Route of the health screen. */
+export const HEALTH_PATH = '/salud';
+
+/** Route of the metrics / charts screen. */
+export const METRICS_PATH = '/graficos';
+
+/** Route of the clinical guides / flight medical manual screen. */
+export const GUIDE_PATH = '/guia';
+
+
+
 /** Route of the agenda calendar. */
 export const AGENDA_PATH = '/agenda';
 
@@ -189,6 +200,25 @@ export const BODY_FALLBACK_SIZE = { width: 600, height: 900 } as const;
 /** How long the 3D body may take to load before the fallback image replaces it (ms). */
 export const BODY_LOAD_TIMEOUT_MS = 3000;
 
+<<<<<<< HEAD
+/** Paleta de colores para gráficos clínicos y dashboards. */
+export const CHART_COLORS = {
+  grid: '#E2E8F0',
+  text: '#64748B',
+  tooltipBg: '#1E293B',
+  tooltipText: '#FFFFFF',
+  minLine: '#10B981',
+  maxLine: '#6366F1',
+  alertLine: '#EF4444',
+  warningLine: '#F59E0B',
+  neutralBar: '#94A3B8',
+  neutralBarLight: '#CBD5E1',
+  diastolic: '#6366F1',
+  diastolicLimit: '#C7D2FE',
+  systolicLimit: '#D8B4FE',
+} as const;
+
+=======
 /** Milliseconds in one second. */
 export const MS_PER_SECOND = 1000;
 
@@ -209,3 +239,4 @@ export const DEV_TARGETS = {
 
 /** Window over which the 3D frame-rate meter averages its frames (ms). */
 export const FPS_WINDOW_MS = 1000;
+>>>>>>> origin/main

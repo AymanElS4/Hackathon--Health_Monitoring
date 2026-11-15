@@ -9,7 +9,7 @@
  *   BottomNav({ active: 'home' | 'agenda'; onVita: () => void })
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import type { HomeView } from '../../src/application/use-cases/buildHomeView';
@@ -18,7 +18,6 @@ import { NowCard } from '../../src/ui/components/NowCard';
 import { NextList } from '../../src/ui/components/NextList';
 import { BottomNav } from '../../src/ui/components/BottomNav';
 import { messages, t } from '../../src/config/messages.es';
-import { SOON_TOOLTIP_MS } from '../../src/config/constants';
 
 const AVATAR_URL = '/avatars/crew-placeholder.svg';
 
@@ -191,56 +190,18 @@ describe('BottomNav', () => {
     expect(agenda).toHaveClass('font-semibold', 'text-primary');
   });
 
-  it.each(['nav.health', 'nav.guide'])(
-    'shows %s as an aria-disabled tab with its name and no visible "Próximamente" at rest',
-    (key) => {
-      renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
-
-      const tab = screen.getByRole('button', { name: new RegExp(messages[key]) });
-      expect(tab).toHaveAttribute('aria-disabled', 'true');
-      expect(within(tab).queryByText(messages['nav.soon'])).not.toBeInTheDocument();
-      expect(screen.queryByText(messages['nav.soon'])).not.toBeInTheDocument();
-      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    },
-  );
-
-  it.each(['nav.health', 'nav.guide'])(
-    'puts "Próximamente" in the title tooltip of %s',
-    (key) => {
-      renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
-
-      const tab = screen.getByRole('button', { name: new RegExp(messages[key]) });
-      expect(tab).toHaveAttribute('title', messages['nav.soon']);
-    },
-  );
-
-  it('clicking a disabled tab does nothing except showing the tooltip', () => {
-    const onVita = vi.fn();
-    renderWithRouter(<BottomNav active="home" onVita={onVita} />);
-
-    const tab = screen.getByRole('button', { name: new RegExp(messages['nav.health']) });
-    fireEvent.click(tab);
-
-    expect(onVita).not.toHaveBeenCalled();
-    expect(tab).toHaveAttribute('aria-disabled', 'true');
-  });
-
-  it('shows the tooltip on click, links it with aria-describedby, and hides it after the timeout', () => {
-    vi.useFakeTimers();
+  it('shows nav.health as a link to the health screen', () => {
     renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
-
-    const tab = screen.getByRole('button', { name: new RegExp(messages['nav.guide']) });
-    fireEvent.click(tab);
-
-    const tooltip = screen.getByRole('tooltip');
-    expect(tooltip).toHaveTextContent(messages['nav.soon']);
-    expect(tab).toHaveAttribute('aria-describedby', tooltip.id);
-
-    act(() => {
-      vi.advanceTimersByTime(SOON_TOOLTIP_MS);
-    });
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    const healthLink = screen.getByRole('link', { name: new RegExp(messages['nav.health']) });
+    expect(healthLink).toHaveAttribute('href', '/salud');
   });
+
+  it('shows nav.guide as a link to the guide screen', () => {
+    renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
+    const guideLink = screen.getByRole('link', { name: new RegExp(messages['nav.guide']) });
+    expect(guideLink).toHaveAttribute('href', '/guia');
+  });
+
 
   it('calls onVita exactly once when the raised Vita button is pressed', () => {
     const onVita = vi.fn();
