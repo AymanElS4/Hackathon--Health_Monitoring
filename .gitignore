@@ -14,3 +14,6 @@ WESAD/
 frontend/data/raw/
 sleep-edf*/
 *.edf
+
+# Local tooling output (contains machine paths)
+.tsupgrader/runtime-validation/standalone-result.json

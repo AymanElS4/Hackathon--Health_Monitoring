@@ -63,7 +63,7 @@ below is done **inside the app**, with the "Escenario de demo" selector on Home 
 | SC-012 | Normal | Tap each body dot. | Its metric row is highlighted. |
 | SC-013 | CA4 | Look at the Presión bar. | The marker for 118 sits between 90 and 120 on the bar; every other marker sits on its value. |
 | FR-014/015 | Normal | Look at the top of Home. | "Hola, Ana", "Día N · Luz n/14"; "Ahora" with Chequeo diario, its time, 1 min, progress and "Empezar"; "Después" with at most 2 items and the pending count. |
-| FR-018 | Normal | Tap Salud, Agenda, Guía; hover one. | Nothing opens; each shows only a gray icon and name; the tooltip says "Próximamente". |
+| FR-018 | Normal | Tap Salud and Guía; hover one. Tap Agenda. | Salud and Guía open nothing, gray icon and name, tooltip "Próximamente"; Agenda opens the team's agenda screen (PR #6, D52). |
 | Colors | Normal | Compare dots and badges. | No sensor dot has the color of any status badge; "Bien" is slate gray. |
 
 ## Before the demo

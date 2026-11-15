@@ -139,6 +139,28 @@ export const messages: Record<string, string> = {
   'nav.guide': 'Guía',
   'nav.soon': 'Próximamente',
 
+  // Calendar screen
+  'screen.agenda': 'Agenda',
+  'calendar.eyebrow': 'Planificación diaria',
+  'calendar.description': 'Consulta las actividades programadas para cada fecha.',
+  'calendar.today': 'Volver a hoy',
+  'calendar.previousMonth': 'Mes anterior',
+  'calendar.nextMonth': 'Mes siguiente',
+  'calendar.monthView': 'Calendario mensual',
+  'calendar.weekday.mon': 'Lu',
+  'calendar.weekday.tue': 'Ma',
+  'calendar.weekday.wed': 'Mi',
+  'calendar.weekday.thu': 'Ju',
+  'calendar.weekday.fri': 'Vi',
+  'calendar.weekday.sat': 'Sá',
+  'calendar.weekday.sun': 'Do',
+  'calendar.hasEvents': 'Fechas con actividades',
+  'calendar.daySchedule': 'Actividades del día',
+  'calendar.eventCount.one': '1 actividad programada',
+  'calendar.eventCount.other': '{n} actividades programadas',
+  'calendar.empty': 'No hay actividades registradas para esta fecha.',
+  'calendar.backHome': 'Volver a Inicio',
+
   // Demo agenda titles (src/config/agenda.ts)
   'agenda.breakfast': 'Desayuno',
   'agenda.dailyCheckin': 'Chequeo diario',
@@ -148,7 +170,7 @@ export const messages: Record<string, string> = {
   'agenda.bioExperiment.lab': 'Laboratorio',
   'agenda.exercise': 'Ejercicio',
 
-  // Screen headings (placeholders until the screens are implemented)
+  // Screen headings
   'screen.home': 'Base Vital',
   'screen.checkin': 'Chequeo diario',
   'screen.history': 'Historial',
