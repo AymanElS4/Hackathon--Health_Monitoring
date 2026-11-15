@@ -7,6 +7,7 @@
 | `003-medicion-wesad` | Aciertos, falsas alarmas evitadas y aviso temprano sobre WESAD (el número del pitch) | Pendiente |
 | `004-resumen-cirujano` | Backend de sincronización y vista del cirujano de vuelo (servidor fuera del camino crítico, constitución 1.2.0) | Implementada (backend + vista del cirujano); falta el envío desde la tableta (ver `specs/004-resumen-cirujano/pendientes-frontend.md`) — [issue #5](https://github.com/AymanElS4/Hackathon--Health_Monitoring/issues/5) |
 | `005-despliegue` | Enlace público para el jurado (Cloudflare Pages, sin internet tras la primera carga) y todo el proyecto en local con un comando (frontend, backend, base de datos, túnel solo al backend) | Especificada; empieza después de 004 |
+| `006-voz-ingles` | Vita habla y escucha en el idioma del botón ES \| EN (voz, modelo Vosk inglés, palabras en inglés), constitución 1.4.0 | Implementada |
 
 Cada funcionalidad tiene su carpeta en `specs/` con `spec.md`, `plan.md` y `tasks.md` cuando se
 especifica. Las reglas de producto están en `.specify/memory/constitution.md`.

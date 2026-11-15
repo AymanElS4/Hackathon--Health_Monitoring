@@ -4,7 +4,7 @@
  * Verdict and action texts describe the reading and one everyday action; they
  * never name a diagnosis or a medication (principle VI).
  */
-import { getLocale } from './i18n';
+import { getLocale, type Locale } from './i18n';
 import { MESSAGES_EN } from './messages.en';
 import { GUIDE_ES } from './catalogs/guide.es';
 import { HEALTH_ES } from './catalogs/health.es';
@@ -37,7 +37,7 @@ export const messages: Record<string, string> = {
   'answer.mood': '{mood} de 5',
   'chat.partial': '{text}…',
 
-  'language.toggle': 'Cambiar idioma de la pantalla (la voz sigue en español)',
+  'language.toggle': 'Cambiar idioma de la pantalla y de la voz',
 
   // Verdict headlines (RN5)
   'verdict.ok': 'Estás bien',
@@ -287,34 +287,61 @@ export const messages: Record<string, string> = {
 };
 
 /** Spanish number format: decimal comma, at most one decimal ("7,5", "16"). */
-const NUMBER_FORMAT = new Intl.NumberFormat('es', { maximumFractionDigits: 1 });
+const NUMBER_FORMAT_ES = new Intl.NumberFormat('es', { maximumFractionDigits: 1 });
+/** English number format: decimal point, at most one decimal ("7.5", "16"). */
+const NUMBER_FORMAT_EN = new Intl.NumberFormat('en', { maximumFractionDigits: 1 });
 
-/** Formats a number for Spanish speech and text: 7.5 → "7,5". */
-export function formatNumber(value: number): string {
-  return NUMBER_FORMAT.format(value);
+/** Formats a number for speech and text in `language`: 7.5 → "7,5" (es) or "7.5" (en). */
+export function formatNumber(value: number, language: Locale = 'es'): string {
+  return (language === 'en' ? NUMBER_FORMAT_EN : NUMBER_FORMAT_ES).format(value);
 }
 
 /**
  * Looks up a message and replaces each `{name}` placeholder with `params[name]`.
- * Numeric params use `formatNumber`. Placeholders without a matching param are left as they are.
+ * Numeric params use `formatNumber` in `language`, the language of the catalog the
+ * template came from. Placeholders without a matching param are left as they are.
  * Unknown keys return the key.
  */
-function fill(template: string, params?: Record<string, string | number>): string {
+function fill(
+  template: string,
+  language: Locale,
+  params?: Record<string, string | number>,
+): string {
   if (!params) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) => {
     if (!Object.prototype.hasOwnProperty.call(params, name)) return match;
     const value = params[name];
-    return typeof value === 'number' ? formatNumber(value) : value;
+    return typeof value === 'number' ? formatNumber(value, language) : value;
   });
+}
+
+/**
+ * Looks up `key` in the catalog of `language`. English falls back to Spanish, then to the key;
+ * the returned language is the catalog the template came from, used for number formatting.
+ */
+function lookup(key: string, language: Locale): { template: string; language: Locale } {
+  if (language === 'en' && MESSAGES_EN[key] !== undefined) {
+    return { template: MESSAGES_EN[key], language: 'en' };
+  }
+  return { template: messages[key] ?? key, language: 'es' };
 }
 
 /** On-screen text in the current locale (es or en); falls back to Spanish, then to the key. */
 export function t(key: string, params?: Record<string, string | number>): string {
-  const catalog: Record<string, string> = getLocale() === 'en' ? MESSAGES_EN : messages;
-  return fill(catalog[key] ?? messages[key] ?? key, params);
+  const entry = lookup(key, getLocale());
+  return fill(entry.template, entry.language, params);
 }
 
-/** Text that is SPOKEN by Vita: always Spanish, whatever the UI locale. */
-export function tVoice(key: string, params?: Record<string, string | number>): string {
-  return fill(messages[key] ?? key, params);
+/**
+ * Text that is SPOKEN by Vita, in `language` (the voice language chosen at check-in start).
+ * Defaults to Spanish. English falls back to Spanish, then to the key, like `t`.
+ * Numbers are formatted in the language of the catalog used.
+ */
+export function tVoice(
+  key: string,
+  params?: Record<string, string | number>,
+  language: Locale = 'es',
+): string {
+  const entry = lookup(key, language);
+  return fill(entry.template, entry.language, params);
 }

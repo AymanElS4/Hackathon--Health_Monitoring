@@ -18,7 +18,7 @@ export const MESSAGES_EN: Record<string, string> = {
   'ask.mood': 'From one to five, how do you feel?',
   'confirm.mood': 'I heard your mood is {mood} out of 5. Is that right?',
   'ask.mood.again': 'Before we continue, how do you feel? Tell me a number from one to five.',
-  'ask.symptoms': 'Do you have any symptoms?',
+  'ask.symptoms': 'Do you have dizziness, fainting, chest pain or shortness of breath? Say none if not.',
   measure: 'Now I will take your vitals.',
   'measure.temperature.again': 'I will measure your temperature again.',
   'retry.sleep': "I didn't understand, could you repeat that? Tell me a number between 0 and 16.",
@@ -32,7 +32,7 @@ export const MESSAGES_EN: Record<string, string> = {
   'answer.mood': '{mood} out of 5',
   'chat.partial': '{text}…',
 
-  'language.toggle': 'Change the screen language (voice stays in Spanish)',
+  'language.toggle': 'Change the screen and voice language',
 
   // Verdict headlines
   'verdict.ok': "You're doing well",

@@ -36,6 +36,7 @@ import { buildHomeView } from '../../src/application/use-cases/buildHomeView';
 import type { HomeViewInput } from '../../src/application/use-cases/buildHomeView';
 import { formatReadingValue } from '../../src/application/use-cases/formatReadingValue';
 import { computeRangeBar } from '../../src/ui/components/rangeBarLayout';
+import { setLocale } from '../../src/config/i18n';
 import { DEMO_AGENDA } from '../../src/config/agenda';
 import {
   MISSION,
@@ -511,6 +512,14 @@ describe('buildHomeView metric rows with range bars (T091, CA4)', () => {
     expect(rowOf(view, 'pulse')).toMatchObject({ marker: 72, unit: 'lpm', scale: [40, 130], allowedLabel: '60–100' });
     expect(rowOf(view, 'temperature')).toMatchObject({ marker: 36.8, unit: '°C', scale: [35, 39], allowedLabel: '36,1–37,2' });
     expect(rowOf(view, 'oxygen')).toMatchObject({ marker: 98, unit: '%', scale: [85, 100], allowedLabel: '≥ 95' });
+  });
+
+  it('writes the allowed range with a decimal point in English: temperature "36.1–37.2"', () => {
+    setLocale('en');
+    const view = buildHomeView(input({ now: at(9, 35), lastCheckToday: CA4 }));
+
+    expect(rowOf(view, 'temperature')).toMatchObject({ allowedLabel: '36.1–37.2' });
+    expect(rowOf(view, 'sleep')).toMatchObject({ allowedLabel: '≥ 7 h' });
   });
 
   it('takes the source and the simulated flag from the observation of each sensor', () => {

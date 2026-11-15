@@ -1,7 +1,7 @@
 # Base Vital
 
 Offline daily health check-in for astronauts (NASA Space Apps Guayaquil 2026, challenge 04):
-voice check-in in Spanish + rotatable 3D body + one-action verdict. Prototype; never diagnoses.
+voice check-in in Spanish or English + rotatable 3D body + one-action verdict. Prototype; never diagnoses.
 
 ## Stack
 TypeScript (strict) · React 18 · React Router v5.3.4 · Vite · Zod · Vosk (Web Worker) ·
@@ -21,7 +21,8 @@ Layer rules are enforced by eslint-plugin-boundaries.
 Active feature: `specs/001-chequeo-diario-voz-cuerpo/` (spec, plan, tasks).
 
 ## Conventions
-- UI and voice text in Spanish, ONLY in `frontend/src/config/messages.es.ts`; code, comments, docs in English.
+- UI and voice text ONLY in `frontend/src/config/messages.es.ts` / `messages.en.ts` (ES | EN toggle drives
+  screen and voice); code, comments, docs in English.
 - `.glb` node names are fixed: `body`, `sensor_sleep`, `sensor_pulse`, `sensor_pressure`,
   `sensor_temperature`, `sensor_oxygen`. Never rename; `npm run check:model` must pass.
 - Two separate color tables in `frontend/src/config/constants.ts`: `SENSOR_COLORS` (which sensor) and

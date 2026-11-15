@@ -13,7 +13,7 @@ import { SENSOR_INDICATORS, SLEEP_HOURS_MAX } from '@base-vital/contracts';
 import type { Indicator, Observation, SensorKey, Symptom, Verdict } from '@base-vital/contracts';
 import { TEMP_IN_DOUBT_BAND } from '@base-vital/health-rules';
 import { MOOD_MAX, MOOD_MIN, parseUtterance } from '../parsing/parseUtterance';
-import type { Intent, ParseResult } from '../parsing/parseUtterance';
+import type { Intent, ParseResult, VoiceLanguage } from '../parsing/parseUtterance';
 import type {
   CheckinEvent,
   CheckinScript,
@@ -41,6 +41,8 @@ export interface CheckinState {
   step: StepId | 'idle' | 'evaluating' | 'saved';
   paused: boolean;
   script: CheckinScript;
+  /** Voice language of the check-in: picks the grammar and the parser words (006). */
+  language: VoiceLanguage;
   /** Index into `DEVICE_SEQUENCE` of the device being read during `measuring`. */
   deviceIndex: number;
   /** Parsed value waiting for its confirm step; `null` otherwise. */
@@ -85,11 +87,15 @@ const RETRY_KEYS: Record<VoiceValue['indicator'], string> = {
   mood: 'retry.mood',
 };
 
-export function createCheckinState(input: { script: CheckinScript }): CheckinState {
+export function createCheckinState(input: {
+  script: CheckinScript;
+  language?: VoiceLanguage;
+}): CheckinState {
   return {
     step: 'idle',
     paused: false,
     script: input.script,
+    language: input.language ?? 'es',
     deviceIndex: 0,
     pending: null,
     confirmedVoice: [],
@@ -149,8 +155,9 @@ function listeningStep(state: CheckinState): CheckinStep | undefined {
   return listens ? step : undefined;
 }
 
-function grammarOf(step: CheckinStep): readonly string[] {
-  return step.grammar ?? [];
+/** The Vosk word list of a step in the check-in's language; empty when the step has none. */
+function grammarOf(state: CheckinState, step: CheckinStep): readonly string[] {
+  return step.grammar?.[state.language] ?? [];
 }
 
 /** Parser reading for a step. The closing "next activity" question is a yes/no answer. */
@@ -246,7 +253,7 @@ function prompt(state: CheckinState, step: CheckinStep): CheckinTransition {
   const focus = step.focus === undefined ? [] : [setFocus(step.focus)];
   return {
     state,
-    effects: [...focus, speak(step.messageKey, promptParams(state, step)), listen(grammarOf(step))],
+    effects: [...focus, speak(step.messageKey, promptParams(state, step)), listen(grammarOf(state, step))],
   };
 }
 
@@ -304,7 +311,7 @@ function transcript(state: CheckinState, text: string | null): CheckinTransition
   if (text === null) {
     return missed(state, step);
   }
-  const parsed = parseUtterance(parseKindOf(step), text);
+  const parsed = parseUtterance(parseKindOf(step), text, state.language);
   if (parsed === null) {
     return missed(state, step);
   }
@@ -317,7 +324,7 @@ function pausedTranscript(
   step: CheckinStep,
   text: string | null,
 ): CheckinTransition {
-  const parsed = text === null ? null : parseUtterance(parseKindOf(step), text);
+  const parsed = text === null ? null : parseUtterance(parseKindOf(step), text, state.language);
   if (parsed?.kind === 'intent' && parsed.intent === 'resume') {
     return resume(state);
   }
@@ -351,7 +358,7 @@ function answer(state: CheckinState, step: CheckinStep, parsed: ParseResult): Ch
 /** RN4: an out-of-range value speaks its retry and listens on the same step; otherwise it waits for confirmation. */
 function heardValue(state: CheckinState, step: CheckinStep, value: VoiceValue): CheckinTransition {
   if (!inRange(value)) {
-    return { state, effects: [speak(RETRY_KEYS[value.indicator]), listen(grammarOf(step))] };
+    return { state, effects: [speak(RETRY_KEYS[value.indicator]), listen(grammarOf(state, step))] };
   }
   return advance({ ...state, pending: value });
 }
@@ -413,7 +420,7 @@ function reaskMood(state: CheckinState): CheckinTransition {
   const focus = step.focus === undefined ? [] : [setFocus(step.focus)];
   return {
     state: { ...state, step: 'ask_mood', moodReasked: true },
-    effects: [...focus, speak('ask.mood.again'), listen(grammarOf(step))],
+    effects: [...focus, speak('ask.mood.again'), listen(grammarOf(state, step))],
   };
 }
 
@@ -423,7 +430,7 @@ function toEvaluation(state: CheckinState): CheckinTransition {
 }
 
 function relisten(state: CheckinState, step: CheckinStep): CheckinTransition {
-  return { state, effects: [listen(grammarOf(step))] };
+  return { state, effects: [listen(grammarOf(state, step))] };
 }
 
 /**
@@ -501,7 +508,7 @@ function pause(state: CheckinState): CheckinTransition {
   if (step === undefined || state.paused) {
     return unchanged(state);
   }
-  return { state: { ...state, paused: true }, effects: [listen(grammarOf(step))] };
+  return { state: { ...state, paused: true }, effects: [listen(grammarOf(state, step))] };
 }
 
 function resume(state: CheckinState): CheckinTransition {
@@ -509,7 +516,7 @@ function resume(state: CheckinState): CheckinTransition {
   if (step === undefined || !state.paused) {
     return unchanged(state);
   }
-  return { state: { ...state, paused: false }, effects: [listen(grammarOf(step))] };
+  return { state: { ...state, paused: false }, effects: [listen(grammarOf(state, step))] };
 }
 
 /** Re-speaks the current prompt, then listens again (also while paused). */
@@ -518,5 +525,5 @@ function repeat(state: CheckinState): CheckinTransition {
   if (step === undefined) {
     return unchanged(state);
   }
-  return { state, effects: [speak(step.messageKey, promptParams(state, step)), listen(grammarOf(step))] };
+  return { state, effects: [speak(step.messageKey, promptParams(state, step)), listen(grammarOf(state, step))] };
 }

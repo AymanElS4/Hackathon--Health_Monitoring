@@ -1,7 +1,9 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.0 → 1.3.0
-- Modified principles: II. Language Split — on-screen UI may be Spanish or English; voice stays Spanish (MINOR)
+- Version change: 1.3.0 → 1.4.0
+- Modified principles: II. Language Split — voice (what Vita says and the speech it understands)
+  follows the selected language, Spanish or English (MINOR)
+- Previous change: 1.2.0 → 1.3.0 — on-screen UI may be Spanish or English; voice stays Spanish
 - Previous change: 1.1.0 → 1.2.0
 - Modified sections: Prototype Constraints — "no server" replaced by: a server is allowed only off
   the astronaut's critical path (sync + flight-surgeon view); the astronaut app MUST work with the
@@ -28,9 +30,9 @@ added complexity MUST be justified in the plan.
 
 ### II. Language Split
 
-- Voice (what Vita says aloud and the speech it understands) MUST be in Spanish.
-- The on-screen interface MAY be in Spanish or English (user-selectable); all UI text lives in the
-  message catalogs, never in components.
+- The on-screen interface and the voice (what Vita says aloud and the speech it understands) MAY be
+  in Spanish or English, user-selectable; one selection drives both, and it is fixed for the length
+  of a check-in. All UI and voice text lives in the message catalogs, never in components.
 - Code, comments, and technical documents MUST be in English.
 - The video pitch MUST be in English with Spanish subtitles.
 
@@ -98,4 +100,4 @@ or used in any calculation.
 - Specs, plans, tasks, and reviews MUST be checked for compliance; unresolved conflicts are fixed
   in the plan or spec, not by ignoring the constitution.
 
-**Version**: 1.3.0 | **Ratified**: 2026-11-14 | **Last Amended**: 2026-11-15
+**Version**: 1.4.0 | **Ratified**: 2026-11-14 | **Last Amended**: 2026-11-15

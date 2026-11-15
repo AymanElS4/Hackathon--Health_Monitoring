@@ -83,7 +83,7 @@ const script: CheckinScript = [
     kind: 'ask',
     messageKey: 'ask.sleep',
     parse: 'sleep',
-    grammar: sleepGrammar,
+    grammar: { es: sleepGrammar, en: sleepGrammar },
     focus: 'sleep',
     indicator: 'sleep_hours',
   },
@@ -92,7 +92,7 @@ const script: CheckinScript = [
     kind: 'ask',
     messageKey: 'ask.mood',
     parse: 'mood',
-    grammar: moodGrammar,
+    grammar: { es: moodGrammar, en: moodGrammar },
     focus: 'sleep',
     indicator: 'mood',
   },
@@ -101,12 +101,12 @@ const script: CheckinScript = [
     kind: 'ask',
     messageKey: 'ask.symptoms',
     parse: 'symptoms',
-    grammar: symptomsGrammar,
+    grammar: { es: symptomsGrammar, en: symptomsGrammar },
     focus: null,
   },
   { id: 'measuring', kind: 'measure', messageKey: 'measure' },
   { id: 'summary', kind: 'summary', messageKey: 'verdict' },
-  { id: 'next_activity', kind: 'next', messageKey: 'next', grammar: nextGrammar, focus: null },
+  { id: 'next_activity', kind: 'next', messageKey: 'next', grammar: { es: nextGrammar, en: nextGrammar }, focus: null },
 ];
 
 // ---------------------------------------------------------------------------

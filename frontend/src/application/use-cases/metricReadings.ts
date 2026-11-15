@@ -18,6 +18,7 @@ import {
 import { THRESHOLDS, computeBaseline } from '@base-vital/health-rules';
 import { SENSOR_BASELINE, SENSOR_INDICATOR, UI_SCALES } from '../../config/constants';
 import { formatNumber, t } from '../../config/messages.es';
+import { getLocale } from '../../config/i18n';
 
 /** One metric row: what the sensor reading says and how its range bar is drawn. */
 export interface StatusReading {
@@ -108,7 +109,11 @@ function allowedLabelOf(sensor: SensorKey): string {
   if (band === undefined) return '';
   const { min, max } = band;
   if (min !== undefined && max !== undefined) {
-    return t('allowed.range', { min: formatNumber(min), max: formatNumber(max - DISPLAY_STEP[sensor]) });
+    const locale = getLocale();
+    return t('allowed.range', {
+      min: formatNumber(min, locale),
+      max: formatNumber(max - DISPLAY_STEP[sensor], locale),
+    });
   }
   if (min !== undefined) {
     return sensor === 'sleep' ? t('allowed.atLeastHours', { value: min }) : t('allowed.atLeast', { value: min });

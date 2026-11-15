@@ -1,5 +1,5 @@
 import type { SpeechRecognizerPort } from '../../application/ports/SpeechRecognizerPort';
-import { VOSK_MANIFEST_URL, loadModelBlobUrl } from './loadModelBlobUrl';
+import { VOSK_MANIFEST_URLS, loadModelBlobUrl } from './loadModelBlobUrl';
 
 /** Preferred capture sample rate; the recognizer uses the context's actual rate. */
 export const PREFERRED_SAMPLE_RATE = 16000;
@@ -7,6 +7,13 @@ export const PREFERRED_SAMPLE_RATE = 16000;
 export const SCRIPT_PROCESSOR_BUFFER_SIZE = 4096;
 const CHANNEL_COUNT = 1;
 const UNKNOWN_TOKEN = '[unk]';
+
+/**
+ * Check-in languages this adapter knows a Vosk model for. Same union as `VoiceLanguage` in
+ * domain/parsing/parseUtterance; declared here because adapters may not import the domain
+ * (eslint-plugin-boundaries).
+ */
+export type VoiceLanguage = 'es' | 'en';
 
 /** Minimal structural types so the adapter can be tested without a browser or Vosk. */
 export interface VoskRecognizerHandle {
@@ -57,8 +64,13 @@ export interface VoskTiming {
 }
 
 export interface VoskRecognizerOptions {
-  /** Absolute URL of the split-model manifest (vosk-browser fetches inside a blob worker). */
+  /**
+   * Absolute URL of the split-model manifest. When set it wins over `language` (every listen uses
+   * this model). vosk-browser fetches inside a blob worker, so it must not be root-relative.
+   */
   manifestUrl?: string;
+  /** Check-in language, read at each `listen`/`preload` to pick the model. Defaults to 'es'. */
+  language?: () => VoiceLanguage;
   /** Builds the blob: URL from the manifest; injectable for tests. */
   loadModelUrl?: (manifestUrl: string) => Promise<string>;
   revokeObjectURL?: (url: string) => void;
@@ -70,7 +82,8 @@ export interface VoskRecognizerOptions {
 }
 
 export class VoskRecognizer implements SpeechRecognizerPort {
-  private readonly manifestUrl: string;
+  private readonly explicitManifestUrl: string | undefined;
+  private readonly language: () => VoiceLanguage;
   private readonly loadModelUrl: (manifestUrl: string) => Promise<string>;
   private readonly revokeObjectURL: (url: string) => void;
   private readonly createModel: (url: string) => Promise<VoskModelHandle>;
@@ -78,7 +91,8 @@ export class VoskRecognizer implements SpeechRecognizerPort {
   private readonly audioContextFactory: () => AudioContextHandle;
   private readonly now: () => number;
   private readonly timing: VoskTiming | undefined;
-  private modelPromise: Promise<VoskModelHandle> | null = null;
+  /** One model load per manifest URL; a failed load is dropped so the next call retries it. */
+  private readonly modelPromises = new Map<string, Promise<VoskModelHandle>>();
   private abort: (() => void) | null = null;
   private generation = 0;
   private session: Promise<AudioSession> | null = null;
@@ -86,12 +100,8 @@ export class VoskRecognizer implements SpeechRecognizerPort {
   private readonly recognizers = new Set<ActiveRecognizer>();
 
   constructor(opts: VoskRecognizerOptions = {}) {
-    // A root-relative URL would resolve against blob: inside vosk-browser's worker.
-    this.manifestUrl =
-      opts.manifestUrl ??
-      (typeof location !== 'undefined'
-        ? new URL(VOSK_MANIFEST_URL, location.href).href
-        : VOSK_MANIFEST_URL);
+    this.explicitManifestUrl = opts.manifestUrl;
+    this.language = opts.language ?? (() => 'es');
     this.loadModelUrl = opts.loadModelUrl ?? ((u) => loadModelBlobUrl(u));
     this.revokeObjectURL = opts.revokeObjectURL ?? ((u) => URL.revokeObjectURL(u));
     this.createModel =
@@ -108,9 +118,16 @@ export class VoskRecognizer implements SpeechRecognizerPort {
     this.timing = opts.timing;
   }
 
+  /** Manifest URL for the current language, absolute: a root-relative URL would break in the worker. */
+  private currentManifestUrl(): string {
+    if (this.explicitManifestUrl !== undefined) return this.explicitManifestUrl;
+    const path = VOSK_MANIFEST_URLS[this.language()];
+    return typeof location !== 'undefined' ? new URL(path, location.href).href : path;
+  }
+
   /** Joins the model parts into a blob: URL, loads the model, then revokes the URL (also on failure). */
-  private async loadModel(): Promise<VoskModelHandle> {
-    const url = await this.loadModelUrl(this.manifestUrl);
+  private async loadModel(manifestUrl: string): Promise<VoskModelHandle> {
+    const url = await this.loadModelUrl(manifestUrl);
     try {
       return await this.createModel(url);
     } finally {
@@ -118,15 +135,20 @@ export class VoskRecognizer implements SpeechRecognizerPort {
     }
   }
 
+  /** The model for a manifest URL, loaded at most once while it succeeds. */
+  private modelFor(manifestUrl: string): Promise<VoskModelHandle> {
+    const cached = this.modelPromises.get(manifestUrl);
+    if (cached) return cached;
+    const p = this.loadModel(manifestUrl);
+    this.modelPromises.set(manifestUrl, p);
+    p.catch(() => {
+      if (this.modelPromises.get(manifestUrl) === p) this.modelPromises.delete(manifestUrl);
+    });
+    return p;
+  }
+
   preload(): Promise<void> {
-    if (!this.modelPromise) {
-      const p = this.loadModel();
-      this.modelPromise = p;
-      p.catch(() => {
-        if (this.modelPromise === p) this.modelPromise = null;
-      });
-    }
-    return this.modelPromise.then(() => undefined);
+    return this.modelFor(this.currentManifestUrl()).then(() => undefined);
   }
 
   async prepare(): Promise<void> {
@@ -205,8 +227,7 @@ export class VoskRecognizer implements SpeechRecognizerPort {
     const generation = this.generation;
     let model: VoskModelHandle;
     try {
-      await this.preload();
-      model = await this.modelPromise!;
+      model = await this.modelFor(this.currentManifestUrl());
     } catch {
       // Port contract: resolve null, never reject. Wait so runner retries cannot spin.
       await new Promise<void>((r) => setTimeout(r, opts.timeoutMs));

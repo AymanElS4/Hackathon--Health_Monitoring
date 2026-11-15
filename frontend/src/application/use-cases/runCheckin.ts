@@ -7,6 +7,7 @@ import type { SensorKey } from '@base-vital/contracts';
 import { LISTEN_TIMEOUT_MS, SAVE_TIMEOUT_MS } from '../../config/constants';
 import { t, tVoice } from '../../config/messages.es';
 import { checkinReducer, createCheckinState } from '../../domain/checkin/checkinReducer';
+import type { VoiceLanguage } from '../../domain/parsing/parseUtterance';
 import type { CheckinEvent, CheckinScript, Effect, StepId } from '../../domain/checkin/types';
 import type {
   AgendaPort,
@@ -19,9 +20,10 @@ import type {
 import {
   evaluatedReadings,
   evaluationFacts,
-  nextItemAt,
+  lineText,
   type CheckinEvaluation,
   type EvaluationFacts,
+  type Translate,
 } from './checkinEvaluation';
 import { buildCheckRecord, observationsOf } from './buildCheckRecord';
 import { withTimeout } from './withTimeout';
@@ -46,6 +48,11 @@ export interface CheckinDeps {
   script: CheckinScript;
   /** Dev-only timing of the run (T095); omit it and nothing is measured. */
   metrics?: DevMetricsTap;
+  /**
+   * Voice language of the check-in (006). Read once, when the runner is created: the reducer
+   * grammar and every spoken line use that language. Defaults to Spanish.
+   */
+  language?: () => VoiceLanguage;
 }
 
 export interface CheckinRunner {
@@ -58,7 +65,10 @@ export interface CheckinRunner {
 }
 
 export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
-  let state = createCheckinState({ script: deps.script });
+  const language: VoiceLanguage = deps.language?.() ?? 'es';
+  /** Spoken lines use the check-in language; captions use the screen locale (`t`). */
+  const voiceIn: Translate = (key, params) => tVoice(key, params, language);
+  let state = createCheckinState({ script: deps.script, language });
   let view = {
     focus: null as SensorKey | null,
     caption: null as string | null,
@@ -166,24 +176,15 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
     }
   }
 
-  /** Text of a line key through `translate`: `t` for the caption, `tVoice` for the spoken line. */
-  function lineFor(
-    translate: typeof t,
-    key: string,
-    params?: Record<string, string | number>,
-  ): string {
-    if (key === 'confirm.sleep' && params?.hours === 1) return translate('confirm.sleep.one');
-    // Action keys take their params from the evaluation (e.g. the missing sensor's name).
-    if (key !== 'next') return translate(key, key.startsWith('action.') ? evaluation.outcome.actionParams : params);
-    const item = nextItemAt(deps.agenda, deps.clock.now());
-    if (item === null) return translate('next.none');
-    return translate('next', { title: item.title, time: item.time });
+  /** Caption (`t`) or spoken line (`voiceIn`) of a line key. */
+  function lineFor(translate: Translate, key: string, params?: Record<string, string | number>): string {
+    return lineText(translate, key, params, { verdict: verdictResult, agenda: deps.agenda, now: deps.clock.now() });
   }
 
   async function speak(key: string, params?: Record<string, string | number>): Promise<void> {
     if (key === '') return;
     const caption = lineFor(t, key, params);
-    const spoken = lineFor(tVoice, key, params);
+    const spoken = lineFor(voiceIn, key, params);
     spokenLines = [...spokenLines, { id: spokenLines.length + 1, text: caption, step: state.step }];
     publish({ caption, speaking: true });
     await deps.synthesizer.speak(spoken);
