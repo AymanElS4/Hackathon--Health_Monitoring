@@ -11,10 +11,11 @@ import {
 } from './enums';
 
 // Bounds of the value schemas below (data-model.md, RN4). Named so each schema reads as its rule.
-const SLEEP_HOURS_MAX = 16;
+export const SLEEP_HOURS_MAX = 16;
 const SLEEP_STEPS_PER_HOUR = 2;
-const MOOD_MIN = 1;
-const MOOD_MAX = 5;
+/** Lowest and highest mood on the 1-5 scale (RN4). Shared by the parser, reducer and UI. */
+export const MOOD_MIN = 1;
+export const MOOD_MAX = 5;
 const PRIOR_NIGHTS_COUNT = 2;
 
 // Entity schemas from specs/001-chequeo-diario-voz-cuerpo/data-model.md.
@@ -108,6 +109,8 @@ export const Threshold = z
     red: RangeBand,
     /** Consecutive readings needed to make `red` (sleep 3 nights, mood 2 days). */
     consecutiveForRed: z.number().int().positive().optional(),
+    /** Blood pressure only: which component of the reading this entry applies to. */
+    component: z.enum(['systolic', 'diastolic']).optional(),
     source: z.string().min(1).optional(),
     sourceStatus: SourceStatus,
   })
@@ -154,6 +157,8 @@ export const SensorReading = z.object({
   /** Already formatted for display, e.g. "118/76" or "5 h". */
   value: z.string(),
   outsideNormal: z.boolean(),
+  /** `true` when `level` was set by a team-criterion band (shown with "*", Principle VIII). */
+  teamCriterion: z.boolean(),
   /** The indicator that set `level`; `null` when green. */
   reason: Indicator.nullable(),
 });
@@ -177,8 +182,11 @@ export const CheckRecord = z
     /** Snapshot at save time. */
     readings: z.record(SensorKey, SensorReading),
     verdict: Verdict,
-    /** Key into `src/config/messages.es.ts`; exactly one action (RF9). */
-    actionKey: z.string().min(1),
+    /**
+     * Key into `src/config/messages.es.ts`; exactly one action for `attention`/`alert` (RF9).
+     * `''` for `ok`, which has no action (health-rules `verdict.ts`).
+     */
+    actionKey: z.string(),
     /** `true` for the 14 seeded history days. */
     simulated: z.boolean(),
   })
@@ -192,15 +200,38 @@ export const CheckRecord = z
         });
       }
     });
+    if ((record.verdict === 'ok') !== (record.actionKey === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['actionKey'],
+        message: 'ok has no action; attention/alert need exactly one action (RF9)',
+      });
+    }
   });
 export type CheckRecord = z.infer<typeof CheckRecord>;
 
+/** Icon of an agenda item (data-model.md, AgendaItem). */
+export const AgendaIcon = z.enum(['checkin', 'eva', 'meal', 'exercise', 'task']);
+export type AgendaIcon = z.infer<typeof AgendaIcon>;
+
+/** Action an agenda item can trigger from "Lo próximo". */
+export const AgendaAction = z.enum(['start_checkin']);
+export type AgendaAction = z.infer<typeof AgendaAction>;
+
 /** Static agenda item for "Lo próximo" (`src/config/agenda.ts`). */
 export const AgendaItem = z.object({
+  /** Stable identifier, unique within the agenda. */
+  id: z.string().min(1),
   /** 24-hour time, `HH:mm`. */
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   /** Key into `src/config/messages.es.ts`. */
   titleKey: z.string().min(1),
+  /** Optional key into `src/config/messages.es.ts`. */
+  subtitleKey: z.string().min(1).optional(),
+  /** Expected duration in whole minutes; must be positive. */
+  durationMin: z.number().int().positive().optional(),
+  icon: AgendaIcon.optional(),
+  action: AgendaAction.optional(),
 });
 export type AgendaItem = z.infer<typeof AgendaItem>;
 

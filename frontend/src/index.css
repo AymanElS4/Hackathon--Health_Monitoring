@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global surface and type come from the design tokens (tailwind.config.ts). */
+body {
+  @apply font-sans bg-canvas text-ink antialiased;
+}

@@ -7,9 +7,9 @@ Only the `daily` script exists in this feature.
 |---|---|---|---|---|
 | greeting | `greet` ("Buenos días, Ana. Chequeo diario.") | — | — | — |
 | ask_sleep | `ask.sleep` ("¿Cuántas horas dormiste?") | numbers 0–24, "y media", control | `sleep` | `sleep_hours` |
-| confirm_sleep | `confirm.sleep` ("Escuché {hours} horas. ¿Correcto?") | sí / no, control | `sleep` | confirmed or re-ask |
+| confirm_sleep | `confirm.sleep` ("Escuché que dormiste {hours} horas. ¿Es correcto?") | sí / no, control | `sleep` | confirmed or re-ask |
 | ask_mood | `ask.mood` ("Del uno al cinco, ¿cómo te sientes?") | 1–5, mood words, control | `sleep` | `mood` |
-| confirm_mood | `confirm.mood` ("Escuché {mood}. ¿Correcto?") | sí / no, control | `sleep` | confirmed or re-ask |
+| confirm_mood | `confirm.mood` ("Escuché que tu ánimo es {mood} de 5. ¿Es correcto?") | sí / no, control | `sleep` | confirmed or re-ask |
 | ask_symptoms | `ask.symptoms` ("¿Tienes algún síntoma?") | mareo, desmayo, dolor de pecho, falta de aire, no / ninguno, control | — | `Symptom[]` |
 | measuring | `measure` ("Ahora tomo tus signos.") | — | `pressure` → `pulse` → `oxygen` → `temperature`, 1 s each | device observations |
 | summary | `verdict.*` + one `action.*` | — | worst sensor | verdict + action |

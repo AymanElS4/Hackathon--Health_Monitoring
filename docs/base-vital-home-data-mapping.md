@@ -15,7 +15,7 @@ if a name differs there, data-model.md wins.
     "missionDay": 23,
     "lightPhase": { "kind": "light", "day": 9, "of": 14 },
     "connectivity": "offline",
-    "avatarUrl": "/avatars/crew-a1b2c3.png"
+    "avatarUrl": "/avatars/crew-placeholder.svg"
   },
   "now": {
     "itemId": "daily-checkin",
@@ -27,7 +27,7 @@ if a name differs there, data-model.md wins.
   },
   "next": [
     { "time": "10:00", "titleKey": "agenda.eva", "subtitleKey": "agenda.eva.solarPanel", "icon": "eva" },
-    { "time": "13:00", "titleKey": "agenda.vitaminD", "subtitleKey": "agenda.vitaminD.dose", "icon": "pill" }
+    { "time": "13:00", "titleKey": "agenda.bioExperiment", "subtitleKey": "agenda.bioExperiment.lab", "icon": "task" }
   ],
   "pendingToday": 2,
   "status": {

@@ -5,7 +5,22 @@ import { SimulatedDevices } from './adapters/simulated-devices/SimulatedDevices'
 import { IdbCheckRepository } from './adapters/indexeddb/IdbCheckRepository';
 import { StaticAgenda } from './adapters/static-agenda/StaticAgenda';
 import { SystemClock } from './adapters/clock/SystemClock';
-import type { AgendaPort, CheckRepositoryPort, ClockPort, DevicePort } from './application/ports';
+import { VoskRecognizer } from './adapters/vosk/VoskRecognizer';
+import { SpeechSynth } from './adapters/web-speech-tts/SpeechSynth';
+import { FakeVoice } from './adapters/fakes/FakeVoice';
+import { checkinScripts } from './config/checkinScripts';
+import { evaluateFromState } from './application/use-cases/evaluateFromState';
+import { createCheckinRunner, type CheckinRunner } from './application/use-cases/runCheckin';
+import { NavigatorConnectivity } from './adapters/navigator-connectivity/NavigatorConnectivity';
+import type {
+  AgendaPort,
+  CheckRepositoryPort,
+  ClockPort,
+  ConnectivityPort,
+  DevicePort,
+  SpeechRecognizerPort,
+  SpeechSynthesizerPort,
+} from './application/ports';
 import {
   getStoredScenarioId,
   type StorageLike,
@@ -17,13 +32,14 @@ import {
 /** Which voice adapter family the container uses. */
 export type VoiceAdapterMode = 'real' | 'fake';
 
-// Optional WESAD pulse series (T020). Missing file => empty glob => no replay series.
+// Optional WESAD pulse series (T020). Missing file => empty glob => no series.
+// Exposed on the container for history seeding (T088); not used for today's reading.
 const WESAD_MODULES = import.meta.glob('../data/wesad-hr.json', {
   eager: true,
   import: 'default',
 });
 
-function loadBpmSeries(): number[] | undefined {
+function loadWesadSeries(): number[] | undefined {
   const data = Object.values(WESAD_MODULES)[0] as { bpm?: unknown } | undefined;
   if (!data || typeof data !== 'object' || !Array.isArray(data.bpm)) {
     return undefined;
@@ -31,7 +47,7 @@ function loadBpmSeries(): number[] | undefined {
   return data.bpm.filter((value): value is number => typeof value === 'number');
 }
 
-const BPM_SERIES = loadBpmSeries();
+const WESAD_SERIES = loadWesadSeries();
 
 function defaultStorage(): StorageLike | undefined {
   try {
@@ -72,12 +88,35 @@ export interface AppContainer {
   repository: CheckRepositoryPort;
   agenda: AgendaPort;
   clock: ClockPort;
+  connectivity: ConnectivityPort;
   voiceMode: VoiceAdapterMode;
+  recognizer: SpeechRecognizerPort;
+  synthesizer: SpeechSynthesizerPort;
+  /** Builds a fresh check-in runner wired to this container's ports. */
+  createCheckinRunner: () => CheckinRunner;
+  /** WESAD resting pulse series (bpm) when `data/wesad-hr.json` is present; used by T088. */
+  wesadSeries?: number[];
+  /** Storage that keeps the demo scenario id (localStorage in the browser). */
+  storage: StorageLike | undefined;
+}
+
+function createVoice(
+  mode: VoiceAdapterMode,
+  scenario: DemoScenario,
+): { recognizer: SpeechRecognizerPort; synthesizer: SpeechSynthesizerPort } {
+  if (mode === 'real') {
+    return { recognizer: new VoskRecognizer(), synthesizer: new SpeechSynth() };
+  }
+  const fake = new FakeVoice({
+    mode: scenario.voice === 'never_understands' ? 'never_understands' : 'manual',
+  });
+  return { recognizer: fake, synthesizer: fake };
 }
 
 export function createContainer(options: ContainerOptions = {}): AppContainer {
+  const storage = options.storage ?? defaultStorage();
   const requested = DemoScenarioId.safeParse(
-    options.scenarioId ?? getStoredScenarioId(options.storage ?? defaultStorage()),
+    options.scenarioId ?? getStoredScenarioId(storage),
   );
   const scenarioId = requested.success ? requested.data : DEFAULT_SCENARIO_ID;
   const scenario = DEMO_SCENARIOS[scenarioId];
@@ -85,16 +124,34 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     options.search ?? (typeof window !== 'undefined' ? window.location.search : '');
   const clock = new SystemClock();
 
+  const voiceMode = selectVoiceMode(scenario, search);
+  const voice = createVoice(voiceMode, scenario);
+  const devices = new SimulatedDevices(scenario, { clock: () => clock.now() });
+  const agenda = new StaticAgenda(DEMO_AGENDA);
+  const repository = new IdbCheckRepository();
+
   return {
     scenario,
-    devices: new SimulatedDevices(scenario, {
-      bpmSeries: BPM_SERIES,
-      clock: () => clock.now(),
-    }),
-    repository: new IdbCheckRepository(),
-    agenda: new StaticAgenda(DEMO_AGENDA),
+    devices,
+    repository,
+    agenda,
     clock,
-    voiceMode: selectVoiceMode(scenario, search),
-    // T052: wire SpeechRecognizerPort / SpeechSynthesizerPort here
+    connectivity: new NavigatorConnectivity(),
+    voiceMode,
+    recognizer: voice.recognizer,
+    synthesizer: voice.synthesizer,
+    createCheckinRunner: () =>
+      createCheckinRunner({
+        recognizer: voice.recognizer,
+        synthesizer: voice.synthesizer,
+        devices,
+        agenda,
+        clock,
+        repository,
+        evaluate: (state) => evaluateFromState(state, { at: clock.now().toISOString() }),
+        script: checkinScripts.daily,
+      }),
+    wesadSeries: WESAD_SERIES,
+    storage,
   };
 }

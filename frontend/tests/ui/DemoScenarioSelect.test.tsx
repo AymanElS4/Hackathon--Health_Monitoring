@@ -12,6 +12,7 @@ const reading = (sensor: string, value: string) => ({
   phase: 'confirmed',
   value,
   outsideNormal: false,
+  teamCriterion: false,
   reason: null,
 });
 
@@ -41,7 +42,7 @@ const validRecord = (): CheckRecord =>
     symptoms: ['none'],
     readings,
     verdict: 'ok',
-    actionKey: 'action.ok',
+    actionKey: '',
     simulated: true,
   }) as CheckRecord;
 

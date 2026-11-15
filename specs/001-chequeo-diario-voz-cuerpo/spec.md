@@ -143,7 +143,7 @@ nada.
 **Acceptance Scenarios**:
 
 1. **Given** la pregunta de sueño, **When** Ana dice "cinco horas", **Then** la app responde
-   "Escuché 5 horas. ¿Correcto?" antes de guardar (CA2).
+   "Escuché que dormiste 5 horas. ¿Es correcto?" antes de guardar (CA2).
 2. **Given** la pregunta de sueño, **When** Ana dice "dormí 20 horas", **Then** la app no alarma y
    pregunta otra vez (RN4).
 3. **Given** cualquier pregunta, **When** la app no entiende la voz dos veces seguidas, **Then**
@@ -291,8 +291,8 @@ versión.
   el encabezado; la leyenda y la nota "* Ánimo: criterio del equipo, no clínico" van al pie de la
   tarjeta.
 - **FR-017**: Tocar un punto del cuerpo debe resaltar la fila de su medida.
-- **FR-018**: Las pestañas Salud, Agenda y Guía deben verse pero estar desactivadas, con el texto
-  "Próximamente".
+- **FR-018**: Las pestañas Salud, Agenda y Guía deben verse pero estar desactivadas: solo ícono y
+  nombre en gris; "Próximamente" va en el tooltip, no en pantalla.
 - **FR-019**: Las fuentes, los íconos, el logo, el avatar y las imágenes deben estar dentro de la
   app; ningún recurso se carga de internet.
 
@@ -371,7 +371,7 @@ Criterios de aceptación originales (CA1–CA8), verificables sin código usando
 ### Measurable Outcomes
 
 - **SC-001 (CA1)**: Con un toque en Vita, el chequeo diario termina en 60 segundos o menos.
-- **SC-002 (CA2)**: Al decir "cinco horas", la app responde "Escuché 5 horas. ¿Correcto?" antes de
+- **SC-002 (CA2)**: Al decir "cinco horas", la app responde "Escuché que dormiste 5 horas. ¿Es correcto?" antes de
   guardar.
 - **SC-003 (CA3)**: Mientras Vita pregunta por el sueño, el punto de la frente está resaltado.
 - **SC-004 (CA4)**: Con sueño de 5 h, el punto de sueño queda en atención y el veredicto es

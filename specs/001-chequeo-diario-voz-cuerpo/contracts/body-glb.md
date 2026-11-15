@@ -11,7 +11,7 @@ any of them breaks the viewer.
 | `sensor_pressure` | Empty | right upper arm, mid-biceps | presión |
 | `sensor_temperature` | Empty | navel (abdomen) | temperatura |
 | `sensor_oxygen` | Empty | tip of right index finger | oxígeno |
-| `camera_default` | Camera (optional) | front, slight 3/4 | — |
+| `camera_default` | Camera (optional) | front, straight on (azimuth 0), viewer framing | — |
 
 Export: glTF Binary, +Y up, modifiers and transforms applied, Draco level 6, no animation.
 
@@ -19,7 +19,10 @@ Checked by `frontend/scripts/check-model.ts` (fails the build):
 - all 5 `sensor_*` nodes and `body` exist;
 - triangles ≤ 30 000;
 - file ≤ 3 MB;
-- every sensor node ≤ 3 cm from the `body` surface.
+- every sensor node ≤ 3 cm from the `body` surface;
+- every sensor node is visible from the front camera (+Z): no `body` triangle between the camera and the sensor.
+  The camera sits on +Z at the viewer's framing distance (`cameraDistanceToFit`, FOV and margin from
+  `frontend/src/config/constants.ts`); triangles within 3 mm of the sensor (the skin it sits on) do not count.
 
 Produced by `frontend/scripts/blender/create_sensor_empties.py` (run with `blender --background src.blend
 --python ...`), which creates the empties at given coordinates, joins the mesh, applies transforms

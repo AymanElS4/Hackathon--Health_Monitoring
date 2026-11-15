@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SENSOR_COLORS, LEVEL_COLORS } from '../../src/config/constants';
+import { TOKENS } from '../../src/config/design-tokens';
 import { SensorKey } from '@base-vital/contracts';
 
 const HEX = /^#[0-9a-f]{3,8}$/i;
@@ -52,5 +53,11 @@ describe('color tables do not share values', () => {
 
     const shared = levelHex.filter((hex) => sensorHex.has(hex));
     expect(shared).toEqual([]);
+  });
+
+  it('the neutral hairline TOKENS.color.line is in neither table', () => {
+    const line = TOKENS.color.line.toLowerCase();
+    expect(collectHex(SENSOR_COLORS)).not.toContain(line);
+    expect(collectHex(LEVEL_COLORS)).not.toContain(line);
   });
 });

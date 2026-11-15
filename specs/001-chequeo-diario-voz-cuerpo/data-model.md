@@ -77,7 +77,7 @@ Static data in `libs/health-rules/src/thresholds.ts`.
 | `symptoms` | `Symptom[]` | |
 | `readings` | `Record<SensorKey, SensorReading>` | Snapshot at save time. |
 | `verdict` | `Verdict` | |
-| `actionKey` | `string` | Key into `messages.es.ts`; exactly one action (RF9). |
+| `actionKey` | `string` | Key into `messages.es.ts`; exactly one action for `attention`/`alert` (RF9); `''` for `ok` (no action, health-rules `verdict.ts`). |
 | `simulated` | `boolean` | `true` for the 14 seeded history days. |
 
 ### DemoScenario (static data, `frontend/src/config/demoScenarios.ts`, FR-013)
@@ -105,6 +105,8 @@ after the current time (RF10, PA2).
 
 Derived (pure, `frontend/src/domain/mission/missionClock.ts`): `missionDay = whole days since start + 1`;
 `lightPhase` = lunar cycle of 14 light + 14 dark days → `{ kind: 'light' | 'dark', day: 1–14, of: 14 }`.
+
+`missionStartDate` = 2026-10-24; `LUNAR_CYCLE_OFFSET_DAYS` = 14 (mission day 1 = dark day 1, light starts on day 15), passed to `lightPhase(start, now, lightDays, darkDays, offsetDays)`; 2026-11-15 → Día 23 · Luz 9/14.
 
 ### Connectivity
 `'online' | 'offline'` from `ConnectivityPort` (navigator.onLine). Shown only as the header label.

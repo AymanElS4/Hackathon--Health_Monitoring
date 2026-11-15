@@ -1,4 +1,5 @@
 import type { Level, SensorKey } from '@base-vital/contracts';
+import { TOKENS } from './design-tokens';
 
 /**
  * Two separate color tables. `SENSOR_COLORS` says WHICH sensor a reading
@@ -28,11 +29,13 @@ export interface LevelColor {
    * The dot color is an explicit fill, not a ring.
    */
   fill?: string;
+  /** Badge background, only for `green` (slate text on a light chip). */
+  bg?: string;
 }
 
 /** Is the value fine? One entry per `Level`. */
 export const LEVEL_COLORS = {
-  green: { ring: null, label: '#64748B' },
+  green: { ring: null, label: '#64748B', bg: '#EEF2F6' },
   amber: { ring: '#F2A93B', label: '#F2A93B' },
   red: { ring: '#E5484D', label: '#E5484D' },
   in_doubt: { ring: '#9AA5B1', label: '#9AA5B1', ringStyle: 'dashed' },
@@ -42,6 +45,89 @@ export const LEVEL_COLORS = {
 
 /**
  * Fallback screen positions for sensor dots when the .glb node cannot be
- * resolved. Empty placeholder; T076 fills it.
+ * resolved. `x` and `y` are percentages (0–100) of the width and height of
+ * `public/models/body-fallback.png`, taken from the projected positions the
+ * Blender render printed (T074, `FALLBACK_DOTS=` line of
+ * `frontend/scripts/blender/create_sensor_empties.py`). Regenerate them with
+ * that script whenever `body.glb` or the camera changes.
  */
-export const FALLBACK_DOTS: Partial<Record<SensorKey, { x: number; y: number }>> = {};
+export const FALLBACK_DOTS: Readonly<Record<SensorKey, { readonly x: number; readonly y: number }>> = {
+  sleep: { x: 50.0, y: 10.1 },
+  pulse: { x: 53.9, y: 28.4 },
+  pressure: { x: 29.5, y: 28.8 },
+  temperature: { x: 50.1, y: 41.4 },
+  oxygen: { x: 13.0, y: 42.3 },
+};
+
+/** How long one voice listen waits for an answer before resolving null (ms). */
+export const LISTEN_TIMEOUT_MS = 8000;
+
+/** How long the "Próximamente" tooltip of a disabled tab or link stays on screen after a tap or focus (ms). */
+export const SOON_TOOLTIP_MS = 2000;
+
+/** Big-button sleep options: first and last hour, and the step between two options (hours). */
+export const SLEEP_HOURS_MIN = 0;
+export const SLEEP_HOURS_STEP = 0.5;
+
+/** Order of the metric rows in "Estado de Ana" (mockup order, not `SensorKey` order). */
+export const METRIC_ORDER: readonly SensorKey[] = ['pressure', 'pulse', 'oxygen', 'temperature', 'sleep'];
+
+/** Upcoming agenda items shown under "Lo próximo" on Home (Miller's 7±2 bound, research R17). */
+export const NEXT_MAX = 2;
+
+/** How often Home recomputes its view (clock minute, pending counts) while open (ms). */
+export const HOME_REFRESH_MS = 60_000;
+
+/** Route of the history screen (US6). Home and the check-in end card link to it. */
+export const HISTORY_PATH = '/historial';
+
+/** Route of the home screen. Used by the history screen to go back. */
+export const HOME_PATH = '/';
+
+/** Route of the check-in screen (RF1). Home starts a check-in here. */
+export const CHECKIN_PATH = '/checkin';
+
+/** How long a check-in save may take before it counts as failed (ms). */
+export const SAVE_TIMEOUT_MS = 5000;
+
+/** 3D body model (`public/models/body.glb`). Node names are fixed by contracts/body-glb.md. */
+export const BODY_MODEL_URL = '/models/body.glb';
+
+/** Local Draco decoder directory (Principle VII: no CDN). Must end with a slash. */
+export const BODY_DRACO_PATH = '/models/draco/';
+
+/** Largest rotation either side of the front view, in radians (±60°). */
+export const BODY_AZIMUTH_LIMIT_RAD = Math.PI / 3;
+
+/** Camera polar angle in radians: horizontal, so the body can only turn, not tilt. */
+export const BODY_POLAR_ANGLE_RAD = Math.PI / 2;
+
+/** Vertical field of view of the body camera, in degrees. */
+export const BODY_CAMERA_FOV_DEG = 30;
+
+/** Space kept around the fitted body (1 = touching the frame edge). */
+export const BODY_FIT_MARGIN = 1.1;
+
+/**
+ * Z-index range of the body labels (drei `Html`, `zIndexRange`). The labels stay below the bottom
+ * dock, which is `z-40` (`BottomNav`).
+ */
+export const BODY_LABEL_Z_INDEX_RANGE: number[] = [30, 0];
+
+/** Media query of the reduced-motion preference; the body orbit damping follows it. */
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+/** Length of the leader line from a sensor on the body to its dot, in CSS px. */
+export const BODY_LEADER_PX = 16;
+
+/** Box of one body sensor dot in px (`TOKENS.size.sensorRing`). Its center is the dot center. */
+export const SENSOR_RING_PX = TOKENS.size.sensorRing;
+
+/** Local body image shown when the 3D body cannot run (CL5, ui-build §3 #2). */
+export const BODY_FALLBACK_URL = '/models/body-fallback.png';
+
+/** Pixel size of `body-fallback.png`. The fallback overlay box keeps this aspect so `FALLBACK_DOTS` line up. */
+export const BODY_FALLBACK_SIZE = { width: 600, height: 900 } as const;
+
+/** How long the 3D body may take to load before the fallback image replaces it (ms). */
+export const BODY_LOAD_TIMEOUT_MS = 3000;

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { messages } from '../../src/config/messages.es';
+import { checkinScripts } from '../../src/config/checkinScripts';
 
 /** Keys the check-in script contract (contracts/checkin-script.md) and T016 require. */
 const REQUIRED_KEYS = [
@@ -56,7 +57,33 @@ describe('messages.es', () => {
     }
   });
 
-  it.todo('every key used in frontend/src/config/checkinScripts.ts exists (enable in T047)');
+  it('every key used by the daily check-in script and its dialogue exists', () => {
+    const scriptKeys = checkinScripts.daily.flatMap((step) =>
+      'messageKey' in step ? [step.messageKey] : [],
+    );
+    const dialogueKeys = [
+      'confirm.sleep',
+      'confirm.mood',
+      'retry.sleep',
+      'retry.mood',
+      'verdict.ok',
+      'verdict.attention',
+      'verdict.alert',
+      'action.symptom',
+      'action.red',
+      'action.fever',
+      'action.two_amber',
+      'action.slept_little',
+      'action.missing_data',
+      'action.in_doubt',
+      'action.outside_normal',
+      'action.single_amber',
+    ];
+    for (const key of [...scriptKeys, ...dialogueKeys]) {
+      expect(messages, `missing key: ${key}`).toHaveProperty([key]);
+      expect(messages[key], `empty value: ${key}`).toBeTruthy();
+    }
+  });
 
   it('no verdict.* or action.* text contains a blocklisted disease or medication word', () => {
     const keys = Object.keys(messages).filter(
