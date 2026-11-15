@@ -68,6 +68,9 @@ function renderHome(container: AppContainer) {
         <Switch>
           <Route exact path="/" component={Home} />
           <Route path="/checkin" component={CheckinProbe} />
+          <Route path="/agenda">
+            <p data-testid="agenda-route">{messages['screen.agenda']}</p>
+          </Route>
         </Switch>
       </MemoryRouter>
     </AppServicesProvider>,
@@ -231,16 +234,20 @@ describe('Home screen', () => {
     expect(within(howAreYou as HTMLElement).getByText(t('status.noCheck'))).toBeInTheDocument();
   });
 
-  it('shows "Agenda" as an aria-disabled section link with the soon tooltip', () => {
+  it('opens the agenda from the "Después" card and bottom navigation', () => {
     const container = buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }));
     renderHome(container);
 
-    const link = screen.getByRole('link', { name: new RegExp(messages['nav.agenda']) });
-    expect(link).toHaveAttribute('aria-disabled', 'true');
-    expect(link).toHaveAttribute('title', messages['nav.soon']);
-    fireEvent.click(screen.getByRole('link', { name: new RegExp(messages['nav.agenda']) }));
-    expect(screen.getByRole('tooltip')).toHaveTextContent(messages['nav.soon']);
-    expect(screen.queryByTestId('location')).not.toBeInTheDocument();
+    const links = screen.getAllByRole('link', { name: messages['nav.agenda'] });
+    expect(links).toHaveLength(2);
+    links.forEach((link) => {
+      expect(link).toHaveAttribute('href', '/agenda');
+      expect(link).not.toHaveAttribute('aria-disabled');
+      expect(link).not.toHaveAttribute('title', messages['nav.soon']);
+    });
+
+    fireEvent.click(links[0]);
+    expect(screen.getByTestId('agenda-route')).toHaveTextContent(messages['screen.agenda']);
   });
 
   it('shows the "Empezar" pill inside the "Ahora" footer, not full width', () => {

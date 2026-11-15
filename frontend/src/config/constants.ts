@@ -81,6 +81,9 @@ export const HOME_REFRESH_MS = 60_000;
 /** Route of the history screen (US6). Home and the check-in end card link to it. */
 export const HISTORY_PATH = '/historial';
 
+/** Route of the agenda calendar. */
+export const AGENDA_PATH = '/agenda';
+
 /** Route of the home screen. Used by the history screen to go back. */
 export const HOME_PATH = '/';
 

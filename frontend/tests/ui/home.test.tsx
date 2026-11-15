@@ -6,10 +6,12 @@
  *   HomeHeader({ header: HomeView['header'] })
  *   NowCard({ now: NonNullable<HomeView['now']>; onStart: () => void })
  *   NextList({ next: HomeView['next']; pendingToday: number })
- *   BottomNav({ active: 'home'; onVita: () => void })
+ *   BottomNav({ active: 'home' | 'agenda'; onVita: () => void })
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import type { HomeView } from '../../src/application/use-cases/buildHomeView';
 import { HomeHeader } from '../../src/ui/components/HomeHeader';
 import { NowCard } from '../../src/ui/components/NowCard';
@@ -42,6 +44,10 @@ const THREE_NEXT: HomeView['next'] = [
   { id: 'bio-experiment', time: '13:00', titleKey: 'agenda.bioExperiment', icon: 'task' },
   { id: 'exercise', time: '18:00', titleKey: 'agenda.exercise', icon: 'exercise' },
 ];
+
+function renderWithRouter(component: ReactNode) {
+  return render(<MemoryRouter>{component}</MemoryRouter>);
+}
 
 describe('HomeHeader', () => {
   afterEach(() => {
@@ -107,7 +113,7 @@ describe('NextList', () => {
   });
 
   it('shows at most 2 upcoming rows even when given 3', () => {
-    render(<NextList next={THREE_NEXT} pendingToday={3} />);
+    renderWithRouter(<NextList next={THREE_NEXT} pendingToday={3} />);
 
     const rows = screen.getAllByRole('listitem');
     expect(rows).toHaveLength(2);
@@ -117,27 +123,27 @@ describe('NextList', () => {
   });
 
   it('shows the pending activities count for today', () => {
-    render(<NextList next={THREE_NEXT} pendingToday={3} />);
+    renderWithRouter(<NextList next={THREE_NEXT} pendingToday={3} />);
 
     expect(screen.getByText('3 actividades pendientes hoy')).toBeInTheDocument();
     expect(screen.getByText(t('home.pending', { n: 3 }))).toBeInTheDocument();
   });
 
   it('says "0 actividades pendientes hoy" when nothing is pending', () => {
-    render(<NextList next={[]} pendingToday={0} />);
+    renderWithRouter(<NextList next={[]} pendingToday={0} />);
 
     expect(screen.getByText('0 actividades pendientes hoy')).toBeInTheDocument();
     expect(screen.queryByText(/actividad pendiente hoy/)).toBeNull();
   });
 
   it('says "3 actividades pendientes hoy" for three pending activities', () => {
-    render(<NextList next={THREE_NEXT} pendingToday={3} />);
+    renderWithRouter(<NextList next={THREE_NEXT} pendingToday={3} />);
 
     expect(screen.getByText('3 actividades pendientes hoy')).toBeInTheDocument();
   });
 
   it('uses the singular form when exactly one activity is pending', () => {
-    render(<NextList next={THREE_NEXT} pendingToday={1} />);
+    renderWithRouter(<NextList next={THREE_NEXT} pendingToday={1} />);
 
     expect(screen.getByText('1 actividad pendiente hoy')).toBeInTheDocument();
     expect(screen.queryByText(/actividades pendientes/)).toBeNull();
@@ -151,17 +157,31 @@ describe('BottomNav', () => {
   });
 
   it('marks Hoy as the current page', () => {
-    render(<BottomNav active="home" onVita={vi.fn()} />);
+    renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
 
     const hoy = screen.getByText(messages['nav.home']).closest('[aria-current]');
     expect(hoy).not.toBeNull();
     expect(hoy).toHaveAttribute('aria-current', 'page');
   });
 
-  it.each(['nav.health', 'nav.agenda', 'nav.guide'])(
+  it('links Agenda and gives it the same selected color as Hoy', () => {
+    const firstRender = renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
+    const hoy = screen.getByText(messages['nav.home']).closest('[aria-current]');
+    const agendaLink = screen.getByRole('link', { name: messages['nav.agenda'] });
+    expect(agendaLink).toHaveAttribute('href', '/agenda');
+    expect(hoy).toHaveClass('font-semibold', 'text-primary');
+    firstRender.unmount();
+
+    renderWithRouter(<BottomNav active="agenda" onVita={vi.fn()} />);
+    const agenda = screen.getByText(messages['nav.agenda']).closest('[aria-current]');
+    expect(agenda).toHaveAttribute('aria-current', 'page');
+    expect(agenda).toHaveClass('font-semibold', 'text-primary');
+  });
+
+  it.each(['nav.health', 'nav.guide'])(
     'shows %s as an aria-disabled tab with its name and no visible "Próximamente" at rest',
     (key) => {
-      render(<BottomNav active="home" onVita={vi.fn()} />);
+      renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
 
       const tab = screen.getByRole('button', { name: new RegExp(messages[key]) });
       expect(tab).toHaveAttribute('aria-disabled', 'true');
@@ -171,10 +191,10 @@ describe('BottomNav', () => {
     },
   );
 
-  it.each(['nav.health', 'nav.agenda', 'nav.guide'])(
+  it.each(['nav.health', 'nav.guide'])(
     'puts "Próximamente" in the title tooltip of %s',
     (key) => {
-      render(<BottomNav active="home" onVita={vi.fn()} />);
+      renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
 
       const tab = screen.getByRole('button', { name: new RegExp(messages[key]) });
       expect(tab).toHaveAttribute('title', messages['nav.soon']);
@@ -183,7 +203,7 @@ describe('BottomNav', () => {
 
   it('clicking a disabled tab does nothing except showing the tooltip', () => {
     const onVita = vi.fn();
-    render(<BottomNav active="home" onVita={onVita} />);
+    renderWithRouter(<BottomNav active="home" onVita={onVita} />);
 
     const tab = screen.getByRole('button', { name: new RegExp(messages['nav.health']) });
     fireEvent.click(tab);
@@ -194,9 +214,9 @@ describe('BottomNav', () => {
 
   it('shows the tooltip on click, links it with aria-describedby, and hides it after the timeout', () => {
     vi.useFakeTimers();
-    render(<BottomNav active="home" onVita={vi.fn()} />);
+    renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
 
-    const tab = screen.getByRole('button', { name: new RegExp(messages['nav.agenda']) });
+    const tab = screen.getByRole('button', { name: new RegExp(messages['nav.guide']) });
     fireEvent.click(tab);
 
     const tooltip = screen.getByRole('tooltip');
@@ -211,7 +231,7 @@ describe('BottomNav', () => {
 
   it('calls onVita exactly once when the raised Vita button is pressed', () => {
     const onVita = vi.fn();
-    render(<BottomNav active="home" onVita={onVita} />);
+    renderWithRouter(<BottomNav active="home" onVita={onVita} />);
 
     fireEvent.click(screen.getByRole('button', { name: messages['home.vita'] }));
 
@@ -219,7 +239,7 @@ describe('BottomNav', () => {
   });
 
   it('places the Vita button between the left and right tabs, inside the dock', () => {
-    render(<BottomNav active="home" onVita={vi.fn()} />);
+    renderWithRouter(<BottomNav active="home" onVita={vi.fn()} />);
 
     const vita = screen.getByRole('button', { name: messages['home.vita'] });
     expect(vita.closest('nav')).not.toBeNull();

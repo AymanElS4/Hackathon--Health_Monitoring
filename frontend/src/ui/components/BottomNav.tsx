@@ -1,9 +1,11 @@
 import { BookOpen, CalendarDays, HeartPulse, House, Mic, type LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AGENDA_PATH, HOME_PATH } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { SoonAction } from './SoonAction';
 
-/** Tabs that have a screen. Only Hoy is implemented; the others are disabled placeholders. */
-export type NavTab = 'home';
+/** Tabs that have a screen. */
+export type NavTab = 'home' | 'agenda';
 
 export interface BottomNavProps {
   active: NavTab;
@@ -12,7 +14,7 @@ export interface BottomNavProps {
 }
 
 interface TabDef {
-  key: NavTab | 'health' | 'agenda' | 'guide';
+  key: NavTab | 'health' | 'guide';
   labelKey: string;
   icon: LucideIcon;
 }
@@ -31,16 +33,29 @@ const RIGHT_TABS: readonly TabDef[] = [
 
 const TAB_LAYOUT = 'flex min-h-nav min-w-nav flex-1 flex-col items-center justify-center gap-xs text-meta';
 
-/** Floating bottom dock: Hoy · Salud · (Vita) · Agenda · Guía. Inert tabs show only icon and name; "Próximamente" is the tooltip. */
+/** Floating bottom dock: Hoy · Salud · (Vita) · Agenda · Guía. */
 export function BottomNav({ active, onVita }: BottomNavProps) {
   const renderTab = (tab: TabDef) => {
     const Icon = tab.icon;
-    if (tab.key === active) {
+    if (tab.key === 'home' || tab.key === 'agenda') {
+      const path = tab.key === 'home' ? HOME_PATH : AGENDA_PATH;
+      if (tab.key === active) {
+        return (
+          <div key={tab.key} aria-current="page" className={`${TAB_LAYOUT} font-semibold text-primary`}>
+            <Icon aria-hidden="true" className="h-xl w-xl" />
+            <span>{t(tab.labelKey)}</span>
+          </div>
+        );
+      }
       return (
-        <div key={tab.key} aria-current="page" className={`${TAB_LAYOUT} font-semibold text-primary`}>
+        <Link
+          key={tab.key}
+          to={path}
+          className={`${TAB_LAYOUT} text-ink-secondary transition-colors hover:bg-track hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}
+        >
           <Icon aria-hidden="true" className="h-xl w-xl" />
           <span>{t(tab.labelKey)}</span>
-        </div>
+        </Link>
       );
     }
     return (
