@@ -157,3 +157,28 @@ function dayCheckWithPulse(day: number, pulse: number): CheckRecord {
   const base = ca4Check(new Date(2026, 10, day, 9, 31).toISOString());
   return { ...base, observations: base.observations.map((o) => (o.indicator === 'resting_heart_rate' ? { ...o, value: pulse } : o)) };
 }
+
+describe('MetricRows badge names the indicator that set the level (VIII, RN6)', () => {
+  it('shows "Ánimo: atención*" on the sleep row when mood set its level, not "Atención" alone', () => {
+    const record = ca4Check();
+    const sleep = record.readings.sleep;
+    if (sleep === undefined) throw new Error('fixture has no sleep reading');
+    const moodAmber: CheckRecord = {
+      ...record,
+      readings: { ...record.readings, sleep: { ...sleep, level: 'amber', teamCriterion: true, reason: 'mood' } },
+    };
+    render(<MetricRows readings={rowsOf(moodAmber)} focus={null} />);
+
+    const text = rowFor('sleep').textContent ?? '';
+    expect(text).toContain(`${t('metric.reasonBadge', { reason: t('indicator.mood'), level: t('level.amber') })}${t('team.criterion.mark')}`);
+    expect(text).not.toContain(t('status.verdict.attention'));
+  });
+
+  it('keeps the verdict word on the sleep row when sleep set its own level', () => {
+    render(<MetricRows readings={rowsOf(ca4Check())} focus={null} />);
+
+    const text = rowFor('sleep').textContent ?? '';
+    expect(text).toContain(t('status.verdict.attention'));
+    expect(text).not.toContain(t('indicator.mood'));
+  });
+});

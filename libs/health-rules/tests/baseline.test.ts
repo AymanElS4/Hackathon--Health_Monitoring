@@ -331,6 +331,31 @@ describe('evaluateCheck with the personal baseline (RN3)', () => {
     expect(result.actionKey).toBe('action.outside_normal');
   });
 
+  it('RN5: sleep 5 h with the pulse outside normal is attention with action.slept_little, not alert', () => {
+    // One amber value (sleep) plus a pulse outside normal that is green by its own band: the
+    // outside-normal flag alone never makes alert, and the single amber names the action.
+    const today = recordOf(BASELINE_DAYS + 2, {
+      sleep_hours: 5,
+      mood: 5,
+      systolic: 118,
+      diastolic: 76,
+      resting_heart_rate: 72,
+      body_temperature: 36.8,
+      oxygen_saturation: 97,
+    });
+    const result = evaluateCheck({
+      observations: [...today.observations],
+      symptoms: [],
+      history,
+      formatValue: () => '',
+    });
+
+    expect(result.readings.sleep.level).toBe('amber');
+    expect(result.readings.pulse.outsideNormal).toBe(true);
+    expect(result.verdict).toBe('attention');
+    expect(result.actionKey).toBe('action.slept_little');
+  });
+
   it('pulse 62 today with the same history stays ok (62 is normal, so not all of the last 3 are outside)', () => {
     const result = evaluateWithPulse(62);
 

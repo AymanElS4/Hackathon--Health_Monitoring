@@ -10,7 +10,7 @@ import { MemoryCheckRepository } from '../../src/adapters/fakes/MemoryCheckRepos
 import { evaluateFromState } from '../../src/application/use-cases/evaluateFromState';
 import { StaticAgenda } from '../../src/adapters/static-agenda/StaticAgenda';
 import { DEMO_AGENDA } from '../../src/config/agenda';
-import type { DevicePort, SpeechRecognizerPort } from '../../src/application/ports';
+import type { CheckRepositoryPort, DevicePort, SpeechRecognizerPort } from '../../src/application/ports';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -20,7 +20,7 @@ async function until(cond: () => boolean): Promise<void> {
 }
 
 /** Demo day at 09:00 local, with an "ok" outcome and no action, unless told otherwise. */
-function setup(options: { at?: Date; outcome?: CheckinOutcome; recognizer?: SpeechRecognizerPort } = {}) {
+function setup(options: { at?: Date; outcome?: CheckinOutcome; recognizer?: SpeechRecognizerPort; repository?: CheckRepositoryPort } = {}) {
   const voice = new FakeVoice({ mode: 'manual' });
   const reads: string[] = [];
   const inner = new FakeDevices({
@@ -44,7 +44,7 @@ function setup(options: { at?: Date; outcome?: CheckinOutcome; recognizer?: Spee
     devices,
     agenda,
     clock,
-    repository: new MemoryCheckRepository(),
+    repository: options.repository ?? new MemoryCheckRepository(),
     evaluate: (state) => ({
       ...outcome,
       readings: evaluateFromState(state, { at: clock.now().toISOString() }).readings,
@@ -190,6 +190,8 @@ describe('createCheckinRunner', () => {
       preload: () => Promise.resolve(),
       listen,
       stop: () => undefined,
+      release: () => undefined,
+      prepare: () => Promise.resolve(),
     };
     const { runner } = setup({ recognizer });
 
@@ -198,5 +200,94 @@ describe('createCheckinRunner', () => {
     for (let i = 0; i < 20; i += 1) await tick();
 
     expect(runner.getSnapshot().listening).toBe(false);
+  });
+
+  describe('recognizer lifecycle', () => {
+    it('start() prepares the recognizer once', async () => {
+      const { voice, runner } = setup();
+      const prepare = vi.spyOn(voice, 'prepare');
+      void runner.start();
+      await until(() => voice.isListening());
+      expect(prepare).toHaveBeenCalledTimes(1);
+    });
+
+    it('start() on a disposed runner never prepares the mic (D50)', async () => {
+      const { voice, runner } = setup();
+      const prepare = vi.spyOn(voice, 'prepare');
+      runner.dispose();
+      await runner.start();
+      expect(prepare).not.toHaveBeenCalled();
+      expect(voice.isListening()).toBe(false);
+    });
+
+    it('releases the recognizer once after saved', async () => {
+      const { voice, runner } = setup();
+      const release = vi.spyOn(voice, 'release');
+      const done = runner.start();
+      await answerAll(voice);
+      await done;
+      expect(runner.getSnapshot().step).toBe('saved');
+      expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('dispose() releases the recognizer', async () => {
+      const { voice, runner } = setup();
+      const release = vi.spyOn(voice, 'release');
+      void runner.start();
+      await until(() => voice.isListening());
+      runner.dispose();
+      expect(release).toHaveBeenCalled();
+    });
+
+    it('a rejected save still dispatches saved and releases the recognizer', async () => {
+      const repository = new MemoryCheckRepository();
+      vi.spyOn(repository, 'save').mockRejectedValue(new Error('disk full'));
+      const { voice, runner } = setup({ repository });
+      const release = vi.spyOn(voice, 'release');
+      const done = runner.start();
+      await answerAll(voice);
+      await done;
+      expect(runner.getSnapshot().step).toBe('saved');
+      expect(runner.getSnapshot().saveFailed).toBe(true);
+      expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('a repeat during the save does not reopen the microphone after saved', async () => {
+      const inner = new MemoryCheckRepository();
+      let resolveSave!: () => void;
+      const repository: CheckRepositoryPort = Object.create(inner);
+      repository.save = (record) =>
+        new Promise<void>((resolve) => {
+          resolveSave = () => void inner.save(record).then(() => resolve());
+        });
+      const { voice, runner } = setup({ repository });
+      const events: string[] = [];
+      const listen = vi.spyOn(voice, 'listen');
+      vi.spyOn(voice, 'release').mockImplementation(() => void events.push('release'));
+      const speak = voice.speak.bind(voice);
+      let held: (() => void) | null = null;
+      let hold = false;
+      vi.spyOn(voice, 'speak').mockImplementation((text: string) =>
+        hold ? new Promise<void>((resolve) => { held = resolve; }) : speak(text),
+      );
+      void runner.start();
+      for (const answer of ['siete', 'sí', 'cuatro', 'sí', 'no', 'sí']) {
+        await until(() => voice.isListening());
+        voice.answer(answer);
+        await tick();
+      }
+      await until(() => resolveSave !== undefined);
+      hold = true;
+      void runner.dispatch({ type: 'repeat' });
+      await tick();
+      resolveSave();
+      await until(() => runner.getSnapshot().step === 'saved');
+      const listensAtSaved = listen.mock.calls.length;
+      held!();
+      for (let i = 0; i < 10; i += 1) await tick();
+      expect(events).toEqual(['release']);
+      expect(listen.mock.calls.length).toBe(listensAtSaved);
+      expect(runner.getSnapshot().listening).toBe(false);
+    });
   });
 });

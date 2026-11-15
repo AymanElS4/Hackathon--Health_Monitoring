@@ -15,6 +15,8 @@ export const messages: Record<string, string> = {
   'ask.mood.again': 'Antes de seguir, ¿cómo te sientes? Dime un número del uno al cinco.',
   'ask.symptoms': '¿Tienes algún síntoma?',
   measure: 'Ahora tomo tus signos.',
+  // RN1: the single extra thermometer read after a temperature in doubt
+  'measure.temperature.again': 'Vuelvo a medir la temperatura.',
   'retry.sleep': 'No te entendí bien, ¿me lo repites? Dime un número entre 0 y 16.',
   'retry.mood': 'No te entendí bien, ¿me lo repites? Dime un número del 1 al 5.',
   next: 'Lo próximo: {title} a las {time}.',
@@ -66,6 +68,8 @@ export const messages: Record<string, string> = {
 
   // Dot label: "Ánimo · atención*" (RN6)
   'dot.label': '{reason} · {level}',
+  // Metric row badge when the level comes from another indicator than the row's own: "Ánimo: atención*"
+  'metric.reasonBadge': '{reason}: {level}',
 
   // Display value of a sensor reading (SensorReading.value), units included
   'value.sleep_hours': '{value} h',
@@ -135,6 +139,28 @@ export const messages: Record<string, string> = {
   'nav.guide': 'Guía',
   'nav.soon': 'Próximamente',
 
+  // Calendar screen
+  'screen.agenda': 'Agenda',
+  'calendar.eyebrow': 'Planificación diaria',
+  'calendar.description': 'Consulta las actividades programadas para cada fecha.',
+  'calendar.today': 'Volver a hoy',
+  'calendar.previousMonth': 'Mes anterior',
+  'calendar.nextMonth': 'Mes siguiente',
+  'calendar.monthView': 'Calendario mensual',
+  'calendar.weekday.mon': 'Lu',
+  'calendar.weekday.tue': 'Ma',
+  'calendar.weekday.wed': 'Mi',
+  'calendar.weekday.thu': 'Ju',
+  'calendar.weekday.fri': 'Vi',
+  'calendar.weekday.sat': 'Sá',
+  'calendar.weekday.sun': 'Do',
+  'calendar.hasEvents': 'Fechas con actividades',
+  'calendar.daySchedule': 'Actividades del día',
+  'calendar.eventCount.one': '1 actividad programada',
+  'calendar.eventCount.other': '{n} actividades programadas',
+  'calendar.empty': 'No hay actividades registradas para esta fecha.',
+  'calendar.backHome': 'Volver a Inicio',
+
   // Demo agenda titles (src/config/agenda.ts)
   'agenda.breakfast': 'Desayuno',
   'agenda.dailyCheckin': 'Chequeo diario',
@@ -144,7 +170,7 @@ export const messages: Record<string, string> = {
   'agenda.bioExperiment.lab': 'Laboratorio',
   'agenda.exercise': 'Ejercicio',
 
-  // Screen headings (placeholders until the screens are implemented)
+  // Screen headings
   'screen.home': 'Base Vital',
   'screen.checkin': 'Chequeo diario',
   'screen.history': 'Historial',
@@ -230,6 +256,23 @@ export const messages: Record<string, string> = {
   'scenario.confirm': 'Cambiar y reiniciar',
   'scenario.cancel': 'Cancelar',
   'scenario.changeError': 'No se pudo completar el cambio de escenario. Revisa el historial antes de volver a intentarlo.',
+
+  // Dev-only metrics overlay (T095): shown in development or with ?dev=metrics, never in the demo
+  'dev.title': 'Métricas de desarrollo',
+  'dev.checkin': 'Chequeo completo (toque a guardado)',
+  'dev.voiceStart': 'Micrófono abierto tras la pregunta',
+  'dev.finalTranscript': 'Fin de voz a transcripción final',
+  'dev.fps': 'Cuadros por segundo del 3D',
+  'dev.targetMax': 'objetivo ≤ {value}',
+  'dev.targetMin': 'objetivo ≥ {value}',
+  'dev.met': 'cumple',
+  'dev.notMet': 'no cumple',
+  'dev.notMeasured': 'sin medir',
+  'dev.samples': '{count} muestras',
+  'dev.unit.ms': '{value} ms',
+  'dev.unit.s': '{value} s',
+  'dev.unit.fps': '{value} fps',
+  'dev.note': 'Tiempos: la muestra más lenta de la última pasada. FPS: última ventana de 1 s. La voz y la transcripción solo se miden con el reconocedor real.',
 };
 
 /** Spanish number format: decimal comma, at most one decimal ("7,5", "16"). */

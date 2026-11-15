@@ -14,6 +14,7 @@ import { FakeVoice } from './adapters/fakes/FakeVoice';
 import { checkinScripts } from './config/checkinScripts';
 import { evaluateFromState } from './application/use-cases/evaluateFromState';
 import { createCheckinRunner, type CheckinRunner } from './application/use-cases/runCheckin';
+import { createDevMetricsRecorder, type DevMetricsRecorder, type DevMetricsTap } from './application/devMetrics';
 import { NavigatorConnectivity } from './adapters/navigator-connectivity/NavigatorConnectivity';
 import type {
   AgendaPort,
@@ -105,14 +106,22 @@ export interface AppContainer {
   reseedHistory: (id: DemoScenarioId) => Promise<void>;
   /** Storage that keeps the demo scenario id (localStorage in the browser). */
   storage: StorageLike | undefined;
+  /** Dev-only timing of the check-in (T095); the overlay reads it. */
+  devMetrics: DevMetricsRecorder;
 }
 
 function createVoice(
   mode: VoiceAdapterMode,
   scenario: DemoScenario,
+  devMetrics: DevMetricsRecorder,
 ): { recognizer: SpeechRecognizerPort; synthesizer: SpeechSynthesizerPort } {
   if (mode === 'real') {
-    return { recognizer: new VoskRecognizer(), synthesizer: new SpeechSynth() };
+    const timing = {
+      onListening: (at: number) => devMetrics.markListening(at),
+      onFinal: ({ lastPartialAt, finalAt }: { lastPartialAt: number; finalAt: number }) =>
+        devMetrics.markFinal(finalAt, lastPartialAt),
+    };
+    return { recognizer: new VoskRecognizer({ timing }), synthesizer: new SpeechSynth() };
   }
   const fake = new FakeVoice({
     mode: scenario.voice === 'never_understands' ? 'never_understands' : 'manual',
@@ -132,7 +141,9 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
   const clock = new SystemClock();
 
   const voiceMode = selectVoiceMode(scenario, search);
-  const voice = createVoice(voiceMode, scenario);
+  const devMetrics = createDevMetricsRecorder();
+  const metrics: DevMetricsTap = { recorder: devMetrics, now: () => performance.now() };
+  const voice = createVoice(voiceMode, scenario, devMetrics);
   const devices = new SimulatedDevices(scenario, { clock: () => clock.now() });
   const agenda = new StaticAgenda(DEMO_AGENDA);
   const repository = new IdbCheckRepository();
@@ -158,7 +169,9 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
         evaluate: (state, history) =>
           evaluateFromState(state, { at: clock.now().toISOString(), history }),
         script: checkinScripts.daily,
+        metrics,
       }),
+    devMetrics,
     wesadSeries: WESAD_SERIES,
     // Bounded: a seed that fails or does not settle in SEED_TIMEOUT_MS rejects, and the app renders anyway.
     seedHistoryIfEmpty: () =>

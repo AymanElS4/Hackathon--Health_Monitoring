@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, type RefObject } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { Html, OrbitControls, useGLTF } from '@react-three/drei';
-import { Box3, Vector3 } from 'three';
+import { Box3, Vector3, type Object3D } from 'three';
 import type { SensorKey } from '@base-vital/contracts';
 import {
   BODY_AZIMUTH_LIMIT_RAD,
@@ -28,6 +28,9 @@ const BODY_MESH_NAME = 'body';
 /** Start the Draco-compressed model download as soon as this module loads. */
 useGLTF.preload(BODY_MODEL_URL, BODY_DRACO_PATH);
 
+/** Dev-only frame-rate meter (T095); its own chunk, loaded only when a caller asks for frame rates. */
+const FpsMeter = lazy(() => import('./FpsMeter'));
+
 export interface BodyViewerProps {
   /** Sensor readings of the check or of Home. A sensor with no reading is shown as unknown. */
   readings: readonly BodyReading[];
@@ -44,6 +47,8 @@ export interface BodyViewerProps {
   evaluated: boolean;
   /** Called once, after the body model is loaded and drawn. Lets the caller drop the fallback. */
   onLoaded?: () => void;
+  /** Dev only (T095): receives the 3D frame rate once per window. Omit it and no meter is mounted. */
+  onFrameRate?: (fps: number) => void;
 }
 
 /**
@@ -59,6 +64,7 @@ export function BodyViewer({
   measuring = false,
   evaluated,
   onLoaded,
+  onFrameRate,
 }: BodyViewerProps) {
   return (
     <Canvas
@@ -79,12 +85,13 @@ export function BodyViewer({
         measuring={measuring}
         evaluated={evaluated}
         onLoaded={onLoaded}
+        onFrameRate={onFrameRate}
       />
     </Canvas>
   );
 }
 
-function BodyScene({ readings, focus, onSensorTap, measuring = false, evaluated, onLoaded }: BodyViewerProps) {
+function BodyScene({ readings, focus, onSensorTap, measuring = false, evaluated, onLoaded, onFrameRate }: BodyViewerProps) {
   const { scene } = useGLTF(BODY_MODEL_URL, BODY_DRACO_PATH);
   const viewport = useThree((state) => state.size);
   const camera = useThree((state) => state.camera);
@@ -100,12 +107,17 @@ function BodyScene({ readings, focus, onSensorTap, measuring = false, evaluated,
   }, [scene, onLoaded]);
 
   // Read once per loaded model: the sensor nodes do not move, and the body is fitted to its bounds.
-  const { center, bodySize } = useMemo(() => {
+  const { center, bodySize, bodyMesh } = useMemo(() => {
     scene.updateMatrixWorld(true);
     const body = scene.getObjectByName(BODY_MESH_NAME) ?? scene;
     const box = new Box3().setFromObject(body);
-    return { center: box.getCenter(new Vector3()), bodySize: box.getSize(new Vector3()) };
+    return { center: box.getCenter(new Vector3()), bodySize: box.getSize(new Vector3()), bodyMesh: body };
   }, [scene]);
+
+  // The only occluder of a sensor dot is the body mesh: drei hides a dot when a ray from the camera
+  // to the sensor hits this mesh before the sensor. Passing it explicitly keeps the raycast off the
+  // rest of the scene (drei's default `occlude={true}` raycasts the whole scene every frame).
+  const occluders = useMemo<RefObject<Object3D>[]>(() => [{ current: bodyMesh }], [bodyMesh]);
 
   const sensorPositions = useMemo(() => {
     scene.updateMatrixWorld(true);
@@ -125,6 +137,11 @@ function BodyScene({ readings, focus, onSensorTap, measuring = false, evaluated,
   return (
     <>
       <primitive object={scene} />
+      {onFrameRate && (
+        <Suspense fallback={null}>
+          <FpsMeter onFps={onFrameRate} />
+        </Suspense>
+      )}
       <OrbitControls
         makeDefault
         target={center}
@@ -141,7 +158,7 @@ function BodyScene({ readings, focus, onSensorTap, measuring = false, evaluated,
         const position = sensorPositions[dot.sensor];
         // A missing sensor node is not drawn; scripts/check-model.ts guards the node names.
         return position ? (
-          <Html key={dot.sensor} position={position} occlude zIndexRange={BODY_LABEL_Z_INDEX_RANGE}>
+          <Html key={dot.sensor} position={position} occlude={occluders} zIndexRange={BODY_LABEL_Z_INDEX_RANGE}>
             <SensorCallout dot={dot} onSensorTap={onSensorTap} />
           </Html>
         ) : null;

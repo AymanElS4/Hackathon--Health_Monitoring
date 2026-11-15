@@ -292,8 +292,9 @@ versión.
   El "*" marca cada valor fijado por un criterio del equipo: el ánimo y una medida fuera de "tu normal"
   (RN3, D44), así que la nota es general y no solo de ánimo.
 - **FR-017**: Tocar un punto del cuerpo debe resaltar la fila de su medida.
-- **FR-018**: Las pestañas Salud, Agenda y Guía deben verse pero estar desactivadas: solo ícono y
-  nombre en gris; "Próximamente" va en el tooltip, no en pantalla.
+- **FR-018**: Las pestañas Salud y Guía deben verse pero estar desactivadas: solo ícono y nombre en
+  gris; "Próximamente" va en el tooltip, no en pantalla. La pestaña Agenda abre la pantalla de agenda
+  que el equipo agregó en `main` (PR #6, fuera del alcance de 001; ver D52).
 - **FR-019**: Las fuentes, los íconos, el logo, el avatar y las imágenes deben estar dentro de la
   app; ningún recurso se carga de internet.
 

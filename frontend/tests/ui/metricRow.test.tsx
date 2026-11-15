@@ -124,3 +124,26 @@ describe('StatusHeader trailing slot', () => {
     expect(row?.children).toHaveLength(1);
   });
 });
+
+describe('MetricRow badge names the indicator that set the level', () => {
+  it('shows "Ánimo: atención" on the sleep row when the reason is mood', () => {
+    const { container } = render(<MetricRow sensor="sleep" value="7 h" level="amber" reason="mood" teamCriterion />);
+
+    expect(container.textContent).toContain(
+      `${t('metric.reasonBadge', { reason: t('indicator.mood'), level: t('level.amber') })}${t('team.criterion.mark')}`,
+    );
+    expect(screen.queryByText(t('status.verdict.attention'))).toBeNull();
+  });
+
+  it('keeps the verdict word when the reason is the row\'s own indicator', () => {
+    render(<MetricRow sensor="sleep" value="5 h" level="amber" reason="sleep_hours" />);
+
+    expect(screen.getByText(t('status.verdict.attention'))).toBeInTheDocument();
+  });
+
+  it('keeps the verdict word when there is no reason', () => {
+    render(<MetricRow sensor="pulse" value="72 lpm" level="green" reason={null} />);
+
+    expect(screen.getByText(t('status.verdict.ok'))).toBeInTheDocument();
+  });
+});
