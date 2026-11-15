@@ -4,3 +4,4 @@ build/
 coverage/
 *.min.js
 frontend/public/models/
+frontend/src/features-002

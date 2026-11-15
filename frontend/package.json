@@ -5,17 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsx scripts/check-model.ts && vite build && tsx scripts/check-dist-size.ts",
     "preview": "vite preview",
     "test": "vitest run",
-    "check:model": "tsx scripts/check-model.ts"
+    "check:model": "tsx scripts/check-model.ts",
+    "split:model": "tsx scripts/split-model.ts"
   },
   "dependencies": {
     "@base-vital/contracts": "*",
     "@base-vital/health-rules": "*",
+    "@fontsource/inter": "^5.3.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "idb": "^8.0.4",
+    "lucide-react": "^1.73.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^5.3.4",
@@ -32,7 +35,10 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.2",
     "draco3dgltf": "^1.5.9",
+    "postcss": "^8.5.33",
+    "tailwindcss": "^3.4.19",
     "vite": "^5.4.21",
     "vite-plugin-pwa": "^2.0.0"
   }

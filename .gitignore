@@ -4,5 +4,13 @@ dist/
 .env*
 .DS_Store
 # Vosk model (~40 MB): download vosk-model-small-es-0.42.tar.gz from alphacephei.com/vosk/models
-frontend/public/models/vosk/*.tar.gz
+# into frontend/models-src/vosk/, then run `npm run split:model -w @base-vital/frontend`
+frontend/models-src/vosk/*.tar.gz
 .claude/
+# Raw datasets (only derived JSON is committed; see frontend/data/SOURCES.md)
+WESAD/
+**/WESAD/
+*.pkl
+frontend/data/raw/
+sleep-edf*/
+*.edf

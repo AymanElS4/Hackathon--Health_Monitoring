@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { FakeVoice } from '../../src/adapters/fakes/FakeVoice';
 import { createContainer, selectVoiceMode } from '../../src/composition-root';
 import {
   getStoredScenarioId,
@@ -119,5 +120,22 @@ describe('createContainer', () => {
       storage: fakeStorage({ 'base-vital.scenario': 'bogus' }),
     });
     expect(container.scenario.id).toBe(DEFAULT_SCENARIO_ID);
+  });
+
+  it('wires a connectivity port that reports the current state', () => {
+    const container = createContainer({ search: '', storage: fakeStorage() });
+    expect(container.connectivity).toBeDefined();
+    expect(typeof container.connectivity.isOnline()).toBe('boolean');
+    expect(typeof container.connectivity.subscribe(() => undefined)).toBe('function');
+  });
+});
+
+describe('voice wiring', () => {
+  it('uses one FakeVoice for recognizer and synthesizer in fake mode', () => {
+    const container = createContainer({ search: '?fake=voice', storage: fakeStorage() });
+    expect(container.voiceMode).toBe('fake');
+    expect(container.recognizer).toBeInstanceOf(FakeVoice);
+    expect(container.synthesizer).toBe(container.recognizer);
+    expect(typeof container.createCheckinRunner().start).toBe('function');
   });
 });

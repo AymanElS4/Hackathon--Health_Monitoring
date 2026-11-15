@@ -6,6 +6,7 @@ import {
 import type { CheckRepositoryPort } from '../../application/ports';
 import { t } from '../../config/messages.es';
 import { DemoScenarioId } from '@base-vital/contracts';
+import { Button } from './Button';
 
 export interface DemoScenarioSelectProps {
   /** The scenario currently in effect. */
@@ -74,13 +75,14 @@ export function DemoScenarioSelect({
   };
 
   return (
-    <div>
+    <div className="flex flex-wrap items-center gap-sm">
       <label htmlFor={selectId}>{t('scenario.title')}</label>
       <select
         id={selectId}
         value={pending ?? currentId}
         disabled={busy}
         onChange={handleChange}
+        className="min-h-touch rounded-row bg-card px-md text-meta text-ink shadow-ambient"
       >
         {DemoScenarioId.options.map((id) => (
           <option key={id} value={id}>
@@ -89,12 +91,17 @@ export function DemoScenarioSelect({
         ))}
       </select>
       {pending !== null && (
-        <div role="alert">
+        <div role="alert" className="flex w-full flex-wrap items-center gap-sm">
           <p>{error ? t('scenario.changeError') : t('scenario.resetWarning')}</p>
-          <button type="button" onClick={handleConfirm} disabled={busy}>
+          <Button shape="pill" onClick={handleConfirm} disabled={busy}>
             {t('scenario.confirm')}
-          </button>
-          <button type="button" onClick={handleCancel} disabled={busy}>
+          </Button>
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={busy}
+            className="min-h-touch px-md font-semibold text-ink-secondary"
+          >
             {t('scenario.cancel')}
           </button>
         </div>

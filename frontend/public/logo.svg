@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="48" viewBox="0 0 240 48" role="img" aria-label="Base Vital">
+  <!-- Mark: a rounded badge with a vital-sign pulse line -->
+  <rect x="0" y="4" width="40" height="40" rx="12" fill="#2F6FED"/>
+  <path d="M7 24 H14 L18 15 L23 33 L27 24 H33" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Wordmark drawn as simple rectangles and strokes (no font dependency) -->
+  <g fill="#1E2B3C">
+    <!-- B -->
+    <path d="M52 14 H60 A5 5 0 0 1 60 24 H52 Z M52 24 H61 A5 5 0 0 1 61 34 H52 Z" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linejoin="round"/>
+    <!-- A -->
+    <path d="M70 34 L77 14 L84 34 M73 27 H81" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- S -->
+    <path d="M100 17 C100 12 88 12 88 19 C88 26 101 22 101 29 C101 36 88 36 88 31" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round"/>
+    <!-- E -->
+    <path d="M105 14 V34 M105 14 H115 M105 24 H113 M105 34 H115" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g fill="#1E2B3C">
+    <!-- V -->
+    <path d="M124 14 L131 34 L138 14" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- I -->
+    <path d="M146 14 V34" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round"/>
+    <!-- T -->
+    <path d="M152 14 H164 M158 14 V34" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round"/>
+    <!-- A -->
+    <path d="M170 34 L177 14 L184 34 M173 27 H181" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- L -->
+    <path d="M190 14 V34 H200" fill="none" stroke="#1E2B3C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,234 +1,151 @@
-import { Canvas } from '@react-three/fiber';
-import { Html, OrbitControls } from '@react-three/drei';
+import { useEffect, useMemo, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Html, OrbitControls, useGLTF } from '@react-three/drei';
+import { Box3, Vector3 } from 'three';
 import type { SensorKey } from '@base-vital/contracts';
-import { useState } from 'react';
 import {
-  BODY_AMBIENT_INTENSITY,
-  BODY_CAMERA_FOV,
-  BODY_CAMERA_POSITION,
-  BODY_CAMERA_TARGET,
-  BODY_DASHED_RING_POINTS,
-  BODY_DASH_DOT_GEOMETRY,
-  BODY_DOT_GEOMETRY,
-  BODY_DPR,
-  BODY_EMISSIVE_INTENSITY,
-  BODY_FILL_LIGHT_INTENSITY,
-  BODY_HTML_DISTANCE_FACTOR,
-  BODY_KEY_LIGHT_INTENSITY,
-  BODY_LIGHT_POSITIONS,
-  BODY_MATERIAL_METALNESS,
-  BODY_MATERIAL_ROUGHNESS,
-  BODY_MODEL_COLOR,
-  BODY_ORBIT_LIMITS,
-  BODY_PARTS,
-  BODY_RING_GEOMETRY,
-  BODY_RING_LABEL_OFFSET,
-  BODY_SELECTED_SCALE,
-  BODY_SPHERE_GEOMETRY,
-  BODY_UNLIT_COLOR,
-  BODY_SENSOR_POSITIONS,
-} from '../../config/bodyPreview';
-import { LEVEL_COLORS, SENSOR_COLORS } from '../../config/constants';
-import type { HomeMetricPreview } from '../../config/homePreview';
-import { t } from '../../config/messages.es';
+  BODY_AZIMUTH_LIMIT_RAD,
+  BODY_CAMERA_FOV_DEG,
+  BODY_DRACO_PATH,
+  BODY_FIT_MARGIN,
+  BODY_LABEL_Z_INDEX_RANGE,
+  BODY_MODEL_URL,
+  BODY_POLAR_ANGLE_RAD,
+} from '../../config/constants';
+import { SensorCallout } from './SensorCallout';
+import { bodyDotModels, cameraDistanceToFit, type BodyReading } from './bodyViewerModel';
+import { readSensorPositions } from './sensorPositions';
+import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-interface BodyViewerProps {
-  metrics: HomeMetricPreview[];
-  selectedSensor: SensorKey | null;
-  onSensorTap: (sensor: SensorKey) => void;
+/** Soft lighting: ambient fill plus one key light from the upper front. */
+const AMBIENT_INTENSITY = 0.9;
+/** Key light: direction in scene units (right, up, toward the front) and intensity. */
+const KEY_LIGHT = { x: 1, y: 2, z: 3, intensity: 0.6 };
+
+/** Name of the body mesh node in the .glb (contracts/body-glb.md). */
+const BODY_MESH_NAME = 'body';
+
+/** Start the Draco-compressed model download as soon as this module loads. */
+useGLTF.preload(BODY_MODEL_URL, BODY_DRACO_PATH);
+
+export interface BodyViewerProps {
+  /** Sensor readings of the check or of Home. A sensor with no reading is shown as unknown. */
+  readings: readonly BodyReading[];
+  /** Sensor being discussed (halo), or null. */
+  focus: SensorKey | null;
+  /** Called with the sensor key when a dot is tapped. Omit it for non-interactive dots. */
+  onSensorTap?: (sensor: SensorKey) => void;
+  /** True while the focused sensor is being measured (spinner on its dot). */
+  measuring?: boolean;
+  /**
+   * False before the check is evaluated: every dot is then a plain identity dot (no level, no pill).
+   * True once the verdict exists, when the levels and the "sin dato" dots are shown.
+   */
+  evaluated: boolean;
+  /** Called once, after the body model is loaded and drawn. Lets the caller drop the fallback. */
+  onLoaded?: () => void;
 }
 
-const FALLBACK_POSITIONS: Record<SensorKey, string> = {
-  sleep: 'sensor-point--sleep',
-  pulse: 'sensor-point--pulse',
-  pressure: 'sensor-point--pressure',
-  temperature: 'sensor-point--temperature',
-  oxygen: 'sensor-point--oxygen',
-};
-
-export function BodyViewer({ metrics, selectedSensor, onSensorTap }: BodyViewerProps) {
-  const [webglAvailable] = useState(
-    () => typeof window !== 'undefined' && 'WebGLRenderingContext' in window,
-  );
-
-  if (!webglAvailable) {
-    return (
-      <BodyFallback
-        metrics={metrics}
-        selectedSensor={selectedSensor}
+/**
+ * The 3D body with one sensor dot per sensor (ui-build §3 #2, RF6). Rotates around the vertical
+ * axis within ±60° only: no zoom, no pan, no auto-rotate. The Canvas background is transparent, and
+ * its wrapper does not clip, so a label on the body's edge can extend past the viewer.
+ * The WebGL check, load timeout and fallback switch live in `LazyBodyViewer` (T079).
+ */
+export function BodyViewer({
+  readings,
+  focus,
+  onSensorTap,
+  measuring = false,
+  evaluated,
+  onLoaded,
+}: BodyViewerProps) {
+  return (
+    <Canvas
+      camera={{ fov: BODY_CAMERA_FOV_DEG }}
+      gl={{ alpha: true, antialias: true }}
+      onCreated={({ gl }) => {
+        gl.setClearAlpha(0);
+      }}
+      // R3F's wrapper clips with `overflow: hidden`; the labels are DOM, so they may leave the canvas.
+      style={{ background: 'transparent', overflow: 'visible' }}
+    >
+      <ambientLight intensity={AMBIENT_INTENSITY} />
+      <directionalLight position={[KEY_LIGHT.x, KEY_LIGHT.y, KEY_LIGHT.z]} intensity={KEY_LIGHT.intensity} />
+      <BodyScene
+        readings={readings}
+        focus={focus}
         onSensorTap={onSensorTap}
+        measuring={measuring}
+        evaluated={evaluated}
+        onLoaded={onLoaded}
       />
-    );
-  }
+    </Canvas>
+  );
+}
+
+function BodyScene({ readings, focus, onSensorTap, measuring = false, evaluated, onLoaded }: BodyViewerProps) {
+  const { scene } = useGLTF(BODY_MODEL_URL, BODY_DRACO_PATH);
+  const viewport = useThree((state) => state.size);
+  const camera = useThree((state) => state.camera);
+  const notifiedLoaded = useRef(false);
+  const reducedMotion = usePrefersReducedMotion();
+
+  // `useGLTF` suspends until the model is ready, so this effect runs once the body is drawn.
+  useEffect(() => {
+    if (!notifiedLoaded.current) {
+      notifiedLoaded.current = true;
+      onLoaded?.();
+    }
+  }, [scene, onLoaded]);
+
+  // Read once per loaded model: the sensor nodes do not move, and the body is fitted to its bounds.
+  const { center, bodySize } = useMemo(() => {
+    scene.updateMatrixWorld(true);
+    const body = scene.getObjectByName(BODY_MESH_NAME) ?? scene;
+    const box = new Box3().setFromObject(body);
+    return { center: box.getCenter(new Vector3()), bodySize: box.getSize(new Vector3()) };
+  }, [scene]);
+
+  const sensorPositions = useMemo(() => {
+    scene.updateMatrixWorld(true);
+    return readSensorPositions(scene);
+  }, [scene]);
+
+  // Portrait framing: straight-on camera at the body center, distance set so the body fits.
+  useEffect(() => {
+    const aspect = viewport.width / viewport.height;
+    const distance = cameraDistanceToFit(bodySize, BODY_CAMERA_FOV_DEG, aspect, BODY_FIT_MARGIN);
+    camera.position.set(center.x, center.y, center.z + distance);
+    camera.lookAt(center);
+  }, [camera, center, bodySize, viewport.width, viewport.height]);
+
+  const dots = bodyDotModels(readings, focus, measuring, evaluated);
 
   return (
     <>
-      <Canvas
-        camera={{ position: BODY_CAMERA_POSITION, fov: BODY_CAMERA_FOV }}
-        fallback={
-          <BodyFallback
-            metrics={metrics}
-            selectedSensor={selectedSensor}
-            onSensorTap={onSensorTap}
-          />
-        }
-        dpr={BODY_DPR}
-      >
-        <ambientLight intensity={BODY_AMBIENT_INTENSITY} />
-        <directionalLight position={BODY_LIGHT_POSITIONS[0]} intensity={BODY_KEY_LIGHT_INTENSITY} />
-        <directionalLight position={BODY_LIGHT_POSITIONS[1]} intensity={BODY_FILL_LIGHT_INTENSITY} />
-        <group>
-          <Anatomy />
-          {metrics.map((metric) => (
-            <SensorMarker
-              key={metric.sensor}
-              metric={metric}
-              selected={selectedSensor === metric.sensor}
-              onSelect={onSensorTap}
-            />
-          ))}
-        </group>
-        <OrbitControls
-          enablePan={false}
-          enableZoom={false}
-          minPolarAngle={BODY_ORBIT_LIMITS.minPolarAngle}
-          maxPolarAngle={BODY_ORBIT_LIMITS.maxPolarAngle}
-          target={BODY_CAMERA_TARGET}
-        />
-      </Canvas>
-      <div className="body-viewer-controls">
-        {metrics.map((metric) => (
-          <button
-            key={metric.sensor}
-            type="button"
-            aria-pressed={selectedSensor === metric.sensor}
-            onClick={() => onSensorTap(metric.sensor)}
-          >
-            {t('home.bodyDot', {
-              sensor: t(`home.metric.${metric.sensor}`),
-              level: t(`level.${metric.level}`),
-            })}
-          </button>
-        ))}
-      </div>
+      <primitive object={scene} />
+      <OrbitControls
+        makeDefault
+        target={center}
+        enableDamping={!reducedMotion}
+        enableZoom={false}
+        enablePan={false}
+        autoRotate={false}
+        minAzimuthAngle={-BODY_AZIMUTH_LIMIT_RAD}
+        maxAzimuthAngle={BODY_AZIMUTH_LIMIT_RAD}
+        minPolarAngle={BODY_POLAR_ANGLE_RAD}
+        maxPolarAngle={BODY_POLAR_ANGLE_RAD}
+      />
+      {dots.map((dot) => {
+        const position = sensorPositions[dot.sensor];
+        // A missing sensor node is not drawn; scripts/check-model.ts guards the node names.
+        return position ? (
+          <Html key={dot.sensor} position={position} occlude zIndexRange={BODY_LABEL_Z_INDEX_RANGE}>
+            <SensorCallout dot={dot} onSensorTap={onSensorTap} />
+          </Html>
+        ) : null;
+      })}
     </>
-  );
-}
-
-function Anatomy() {
-  return (
-    <group>
-      {Object.values(BODY_PARTS).map((part, index) => (
-        <mesh key={index} position={part.position} scale={part.scale} castShadow receiveShadow>
-          <sphereGeometry args={BODY_SPHERE_GEOMETRY} />
-          <meshStandardMaterial
-            color={BODY_MODEL_COLOR}
-            roughness={BODY_MATERIAL_ROUGHNESS}
-            metalness={BODY_MATERIAL_METALNESS}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function SensorMarker({
-  metric,
-  selected,
-  onSelect,
-}: {
-  metric: HomeMetricPreview;
-  selected: boolean;
-  onSelect: (sensor: SensorKey) => void;
-}) {
-  const position = BODY_SENSOR_POSITIONS[metric.sensor];
-  const statusColor =
-    metric.level === 'unknown'
-      ? LEVEL_COLORS.unknown.fill
-      : LEVEL_COLORS[metric.level].ring;
-  const markerColor = statusColor ?? SENSOR_COLORS[metric.sensor];
-  const sensorName = t(`home.metric.${metric.sensor}`);
-  const levelName = t(`level.${metric.level}`);
-  const label =
-    metric.level === 'green'
-      ? null
-      : t('home.sensorLabel', { sensor: sensorName, level: levelName });
-
-  return (
-    <group position={position} onClick={(event) => {
-      event.stopPropagation();
-      onSelect(metric.sensor);
-    }}>
-      {(metric.level === 'amber' || metric.level === 'red') && (
-        <mesh>
-          <torusGeometry args={BODY_RING_GEOMETRY} />
-          <meshBasicMaterial color={statusColor ?? SENSOR_COLORS[metric.sensor]} />
-        </mesh>
-      )}
-      {metric.level === 'in_doubt' &&
-        BODY_DASHED_RING_POINTS.map((point, index) => (
-          <mesh key={index} position={point}>
-            <sphereGeometry args={BODY_DASH_DOT_GEOMETRY} />
-            <meshBasicMaterial color={LEVEL_COLORS.in_doubt.label} />
-          </mesh>
-        ))}
-      <mesh scale={selected ? BODY_SELECTED_SCALE : 1}>
-        <sphereGeometry args={BODY_DOT_GEOMETRY} />
-        <meshStandardMaterial
-          color={markerColor}
-          emissive={selected ? SENSOR_COLORS[metric.sensor] : BODY_UNLIT_COLOR}
-          emissiveIntensity={selected ? BODY_EMISSIVE_INTENSITY : 0}
-        />
-      </mesh>
-      {label && (
-        <Html position={BODY_RING_LABEL_OFFSET} center distanceFactor={BODY_HTML_DISTANCE_FACTOR}>
-          <span className={`body-3d-label body-3d-label--${metric.level}`}>{label}</span>
-        </Html>
-      )}
-    </group>
-  );
-}
-
-function BodyFallback({ metrics, selectedSensor, onSensorTap }: BodyViewerProps) {
-  return (
-    <div className="body-fallback">
-      <div className="body-glow body-glow--one" />
-      <div className="body-glow body-glow--two" />
-      <svg className="body-silhouette" viewBox="0 0 300 440" role="img" aria-label={t('home.bodyLabel')}>
-        <defs>
-          <linearGradient id="body-fill" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0" stopColor="var(--body-tone-light)" />
-            <stop offset="1" stopColor="var(--body-tone-dark)" />
-          </linearGradient>
-        </defs>
-        <ellipse cx="150" cy="68" rx="34" ry="42" fill="url(#body-fill)" />
-        <path d="M119 111c-22 8-39 21-48 44l-28 97c-4 14 16 22 22 8l33-78-7 74-8 128c-1 18 25 19 27 1l17-113 8 1 17 112c3 18 29 15 27-3l-8-126-7-74 34 78c6 14 26 6 22-8l-29-97c-9-23-26-36-48-44-11 13-27 13-42 0Z" fill="url(#body-fill)" />
-        <path d="M150 123v241M112 173l-24 66m100-66 24 66" fill="none" stroke="var(--body-outline)" strokeLinecap="round" strokeWidth="2" />
-        <path d="M130 118c6 8 14 11 20 11s14-3 20-11" fill="none" stroke="var(--body-outline)" strokeWidth="2" />
-      </svg>
-      {metrics.map((metric) => (
-        <button
-          className={`sensor-point ${FALLBACK_POSITIONS[metric.sensor]} ${metric.level !== 'green' ? `sensor-point--${metric.level}` : ''} ${selectedSensor === metric.sensor ? 'is-selected' : ''}`}
-          key={metric.sensor}
-          type="button"
-          aria-label={t('home.bodyDot', {
-            sensor: t(`home.metric.${metric.sensor}`),
-            level: t(`level.${metric.level}`),
-          })}
-          aria-pressed={selectedSensor === metric.sensor}
-          onClick={() => onSensorTap(metric.sensor)}
-        >
-          <span />
-          {metric.level !== 'green' && (
-            <span className="sensor-point-label">
-              {t('home.sensorLabel', {
-                sensor: t(`home.metric.${metric.sensor}`),
-                level: t(`level.${metric.level}`),
-              })}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
   );
 }

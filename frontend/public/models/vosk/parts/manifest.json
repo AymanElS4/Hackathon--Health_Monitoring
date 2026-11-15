@@ -1,0 +1,15 @@
+{
+  "file": "vosk-model-small-es-0.42.tar.gz",
+  "size": 39816812,
+  "sha256": "1964b25fcf0086e2a8a01b9cb536899041581f1687ee0c734e2f928c59bf56b3",
+  "parts": [
+    {
+      "name": "vosk-model-small-es-0.42.tar.gz.part00",
+      "size": 20971520
+    },
+    {
+      "name": "vosk-model-small-es-0.42.tar.gz.part01",
+      "size": 18845292
+    }
+  ]
+}

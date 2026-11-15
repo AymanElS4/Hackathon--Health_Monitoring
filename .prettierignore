@@ -5,3 +5,4 @@ coverage/
 *.min.js
 frontend/public/models/
 package-lock.json
+frontend/src/features-002

@@ -110,7 +110,7 @@ leer números.
 
 ## 6. Criterios de aceptación (verificables sin código)
 - CA1. Con un toque en Vita, el chequeo diario termina en 60 segundos o menos.
-- CA2. Al decir "cinco horas", la app responde "Escuché 5 horas. ¿Correcto?" antes de guardar.
+- CA2. Al decir "cinco horas", la app responde "Escuché que dormiste 5 horas. ¿Es correcto?" antes de guardar.
 - CA3. Mientras Vita pregunta por el sueño, el punto de la frente está resaltado.
 - CA4. Con sueño de 5 h, el punto de sueño queda en atención y el veredicto es "atención".
 - CA5. Al girar el cuerpo, cada punto sigue sobre su zona.

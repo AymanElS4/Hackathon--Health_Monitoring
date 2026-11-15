@@ -200,6 +200,7 @@ listed in §A.
   - `readings[i]` carry value, unit, level, marker (numeric), scale (from `UI_SCALES` in
     `constants.ts`), allowedLabel (derived from thresholds), source and baseline. Zone segments are
     NOT in the view model; `RangeBar` builds them from thresholds.
+- Mission day and light phase come from `frontend/src/domain/mission/missionClock.ts` with the values in `frontend/src/config/mission.ts` (data-model.md MissionProfile).
 - The mockup's "1 de 5" and "2 actividades pendientes" are illustrative; the numbers come from the
   rules above and the demo agenda.
 

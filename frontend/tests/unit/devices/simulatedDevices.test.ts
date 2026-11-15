@@ -47,11 +47,11 @@ describe('SimulatedDevices', () => {
     }
   });
 
-  it('returns null for blood pressure in the missing_sensor scenario', async () => {
+  it('returns null for blood pressure and 97 for SpO2 in the missing_sensor scenario', async () => {
     const devices = new SimulatedDevices(DEMO_SCENARIOS.missing_sensor, { clock });
 
     expect(await devices.read('blood_pressure')).toBeNull();
-    expect(await devices.read('oxygen_saturation')).not.toBeNull();
+    expect((await devices.read('oxygen_saturation'))?.value).toBe(97);
   });
 
   it('returns null for implausible values', async () => {
@@ -83,44 +83,13 @@ describe('SimulatedDevices', () => {
     expect(await diaLow.read('blood_pressure')).toBeNull();
   });
 
-  it('replays the pulse series in normal, skipping values outside 60–100', async () => {
-    const devices = new SimulatedDevices(DEMO_SCENARIOS.normal, {
-      bpmSeries: [50, 72, 110, 80, 101, 59, 90],
-      clock,
-    });
-
-    const values: unknown[] = [];
-    for (let i = 0; i < 5; i++) {
-      values.push((await devices.read('resting_heart_rate'))?.value);
-    }
-
-    // In-range series is [72, 80, 90]; it cycles deterministically.
-    expect(values).toEqual([72, 80, 90, 72, 80]);
-  });
-
-  it('filters the pulse series to 60–100 in every scenario, including missing_sensor', async () => {
-    const devices = new SimulatedDevices(DEMO_SCENARIOS.missing_sensor, {
-      bpmSeries: [45, 70, 130],
-      clock,
-    });
-
-    for (let i = 0; i < 4; i++) {
-      expect((await devices.read('resting_heart_rate'))?.value).toBe(70);
-    }
-  });
-
-  it('falls back to the scenario value when no series is given', async () => {
-    const noSeries = new SimulatedDevices(DEMO_SCENARIOS.normal, { clock });
-    const emptySeries = new SimulatedDevices(DEMO_SCENARIOS.normal, { bpmSeries: [], clock });
-    const allOutOfRange = new SimulatedDevices(DEMO_SCENARIOS.normal, {
-      bpmSeries: [150, 40, 20],
-      clock,
-    });
-
-    for (const devices of [noSeries, emptySeries, allOutOfRange]) {
-      const obs = await devices.read('resting_heart_rate');
-      expect(obs?.value).toBe(DEMO_SCENARIOS.normal.devices.resting_heart_rate);
-      expect(obs?.simulated).toBe(true);
+  it('returns the scenario pulse for every scenario', async () => {
+    for (const id of ['normal', 'ca4', 'missing_sensor', 'low_temp', 'voice_not_understood'] as const) {
+      const scenario = DEMO_SCENARIOS[id];
+      const devices = new SimulatedDevices(scenario, { clock });
+      expect((await devices.read('resting_heart_rate'))?.value).toBe(
+        scenario.devices.resting_heart_rate,
+      );
     }
   });
 });

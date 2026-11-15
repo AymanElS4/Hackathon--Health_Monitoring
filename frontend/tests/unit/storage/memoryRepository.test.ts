@@ -8,6 +8,7 @@ const reading = (sensor: string, value: string) => ({
   phase: 'confirmed',
   value,
   outsideNormal: false,
+  teamCriterion: false,
   reason: null,
 });
 
@@ -34,7 +35,7 @@ const makeRecord = (id: string, overrides: Partial<CheckRecord> = {}): CheckReco
   symptoms: ['none'],
   readings,
   verdict: 'ok',
-  actionKey: 'action.ok',
+  actionKey: '',
   simulated: true,
   ...overrides,
 } as CheckRecord);

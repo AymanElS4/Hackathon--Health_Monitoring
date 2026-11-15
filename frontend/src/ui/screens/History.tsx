@@ -1,116 +1,126 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { CheckRecord } from '@base-vital/contracts';
-import type { CheckRepositoryPort } from '../../application/ports';
+import type { CheckRecord, Level, Observation, Verdict } from '@base-vital/contracts';
+import { HOME_PATH } from '../../config/constants';
 import { t } from '../../config/messages.es';
+import { useAppServices } from '../AppServices';
+import { Badge } from '../components/Badge';
+import { Card } from '../components/Card';
 
-interface HistoryProps {
-  repository: CheckRepositoryPort;
+/** Local date and time of a check, e.g. "15 nov 2026, 9:31". */
+const DATE_TIME_FORMAT = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
+
+/** Badge level of each verdict (ok → green, attention → amber, alert → red). */
+const VERDICT_LEVEL: Record<Verdict, Level> = {
+  ok: 'green',
+  attention: 'amber',
+  alert: 'red',
+};
+
+/** Records sorted newest first (by the check's date-time, which is the record id). */
+function newestFirst(records: readonly CheckRecord[]): CheckRecord[] {
+  return [...records].sort((a, b) => Date.parse(b.id) - Date.parse(a.id));
 }
 
-export function History({ repository }: HistoryProps) {
-  const [records, setRecords] = useState<CheckRecord[]>([]);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    repository
-      .list()
-      .then((items) => {
-        if (active) setRecords(items);
-      })
-      .catch(() => {
-        if (active) setError(true);
+/** Display value of one observation. Mood is a team criterion, so it is followed by its mark ("4*"). */
+function valueText(observation: Observation): string {
+  switch (observation.indicator) {
+    case 'blood_pressure':
+      return t('value.blood_pressure', {
+        systolic: observation.value.systolic,
+        diastolic: observation.value.diastolic,
       });
+    case 'mood':
+      return `${t('value.mood', { value: observation.value })}${t('team.criterion.mark')}`;
+    default:
+      return t(`value.${observation.indicator}`, { value: observation.value });
+  }
+}
 
-    return () => {
-      active = false;
-    };
-  }, [repository]);
+/** Source label of one observation: "voz" for voice values, "equipo" for device values. */
+function sourceLabel(source: Observation['source']): string {
+  return source === 'voice' ? t('history.source.voice') : t('history.source.device');
+}
 
+interface HistoryRowProps {
+  record: CheckRecord;
+}
+
+/** One saved check: date, simulated tag, verdict label and every observation with its source. */
+function HistoryRow({ record }: HistoryRowProps) {
   return (
-    <main className="simple-screen">
-      <section className="simple-card">
-        <Link className="brand" to="/" aria-label={t('screen.home')}>
-          <span className="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 40 40">
-              <path d="M20 5v30M5 20h30M9.4 9.4l21.2 21.2m0-21.2L9.4 30.6" />
-              <circle cx="20" cy="20" r="7" />
-            </svg>
-          </span>
-          <span className="brand-wordmark">{t('home.brandBase')}<span>{t('home.brandVital')}</span></span>
-        </Link>
-        <p className="eyebrow">{t('screen.history')}</p>
-        <h1>{t('screen.history')}</h1>
-        {error && <p className="history-error" role="alert">{t('history.loadError')}</p>}
-        {!error && records.length === 0 && (
-          <div className="empty-history">
-            <span className="empty-history-icon" aria-hidden="true">
-              <Icon />
-            </span>
-            <h2>{t('history.empty.title')}</h2>
-            <p>{t('history.empty.description')}</p>
+    <li data-testid="history-record">
+      <Card className="flex flex-col gap-md">
+        <div className="flex flex-wrap items-center justify-between gap-sm">
+          <div className="flex flex-wrap items-center gap-sm">
+            <time dateTime={record.id} className="text-small font-semibold text-ink">
+              {DATE_TIME_FORMAT.format(new Date(record.id))}
+            </time>
+            {record.simulated && <span className="text-meta text-ink-secondary">{t('history.simulated')}</span>}
           </div>
-        )}
-        {records.map((record) => (
-          <article className="history-record" key={record.id}>
-            <header>
-              <strong>{formatDate(record.id)}</strong>
-              <span className={`level-badge level-badge--${verdictLevel(record.verdict)}`}>
-                {t(`verdict.${record.verdict}`)}
-              </span>
-            </header>
-            {record.simulated && (
-              <p className="history-simulation">{t('history.simulation')}</p>
-            )}
-            <ul>
-              {record.observations.map((observation, index) => {
-                const rawValue =
-                  typeof observation.value === 'number'
-                    ? String(observation.value)
-                    : `${observation.value.systolic}/${observation.value.diastolic}`;
-                const moodMark = observation.indicator === 'mood' ? t('team.criterion.mark') : '';
-
-                return (
-                  <li key={`${observation.indicator}-${index}`}>
-                    <span>{t(`indicator.${observation.indicator}`)}{moodMark}</span>
-                    <span>
-                      {t('history.valueWithSource', {
-                        value: rawValue,
-                        source: t(`history.source.${observation.source}`),
-                      })}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </article>
-        ))}
-        {records.some((record) =>
-          record.observations.some((observation) => observation.indicator === 'mood'),
-        ) && <p className="history-criterion-note">{t('team.criterion.note')}</p>}
-        <p><Link className="primary-button" to="/">{t('history.back')}</Link></p>
-      </section>
-    </main>
+          <Badge level={VERDICT_LEVEL[record.verdict]}>{t(`status.verdict.${record.verdict}`)}</Badge>
+        </div>
+        <ul className="grid grid-cols-2 gap-sm">
+          {record.observations.map((observation) => (
+            <li key={observation.indicator} className="flex flex-col gap-xs rounded-card bg-canvas p-md">
+              <span className="text-meta text-ink-secondary">{t(`indicator.${observation.indicator}`)}</span>
+              <span className="text-body font-semibold text-ink">{valueText(observation)}</span>
+              <span className="text-meta text-ink-secondary">{sourceLabel(observation.source)}</span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </li>
   );
 }
 
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('es', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
+/** History screen (T094, US6, CA8, HU6). Lists every saved check, newest first, from the repository. */
+export function History() {
+  const container = useAppServices();
+  const [records, setRecords] = useState<CheckRecord[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
-function verdictLevel(verdict: CheckRecord['verdict']): string {
-  return verdict === 'ok' ? 'green' : verdict === 'attention' ? 'amber' : 'red';
-}
+  useEffect(() => {
+    let active = true;
+    container.repository.list().then(
+      (list) => {
+        if (active) setRecords(list);
+      },
+      () => {
+        if (active) setLoadFailed(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [container]);
 
-function Icon() {
+  const rows = records === null ? [] : newestFirst(records);
+  // The team-criterion note explains the "*" mark, so it is shown only when a mood value is listed.
+  const hasMood = rows.some((record) => record.observations.some((o) => o.indicator === 'mood'));
+
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22Z" />
-      <path d="M4 5.5V22m4-15h8m-8 4h8" />
-    </svg>
+    <main className="min-h-screen bg-canvas">
+      <div className="mx-auto flex max-w-content flex-col gap-xl px-page pb-xl pt-xl">
+        <header className="flex items-center justify-between gap-md">
+          <h1 className="text-title font-semibold text-ink">{t('screen.history')}</h1>
+          <Link to={HOME_PATH} className="text-small font-semibold text-primary">
+            {t('history.backHome')}
+          </Link>
+        </header>
+        {loadFailed && <p className="text-body text-ink-secondary">{t('history.load_failed')}</p>}
+        {records !== null && rows.length === 0 && <p className="text-body text-ink-secondary">{t('history.empty')}</p>}
+        {rows.length > 0 && (
+          <>
+            <ul className="flex flex-col gap-md">
+              {rows.map((record) => (
+                <HistoryRow key={record.id} record={record} />
+              ))}
+            </ul>
+            {hasMood && <p className="text-meta text-ink-secondary">{t('team.criterion.note')}</p>}
+          </>
+        )}
+      </div>
+    </main>
   );
 }

@@ -32,10 +32,10 @@ until an entry is verified, its use is provisional.
 
 ### MakeHuman base mesh
 
-- URL: https://www.makehumancommunity.org/
-- License/Reference: license to verify (expected CC0 for exports).
-- Used for: adult female base mesh for `frontend/public/models/body.glb`.
-- Status: to verify
+- URL: https://github.com/makehumancommunity/makehuman (file `makehuman/data/3dobjs/base.obj`, basemesh hm08)
+- License/Reference: CC0 1.0 Universal. The repository LICENSE.md says "The base mesh and proxies … have been released under CC0 1.0 Universal" (code is AGPL; no code is used). The file header says "This asset was explicitly released as CC0 in september 2020."
+- Used for: only the `body` group of the neutral base mesh (helpers and joints removed), copied to `frontend/scripts/blender/source/makehuman-base-hm08.obj` and turned into `frontend/public/models/body.glb`. No face texture or likeness.
+- Status: verified (2026-11-15)
 
 ### vosk-model-small-es-0.42
 
@@ -43,14 +43,22 @@ until an entry is verified, its use is provisional.
 - License/Reference: Apache 2.0, as listed for this model on https://alphacephei.com/vosk/models
   (accessed 2026-11-15). The README inside the archive says only "Copyright 2022-2050 AC
   Technologies LLC" and has no license text.
-- Used for: offline Spanish speech recognition (`frontend/public/models/vosk/`).
+- Used for: offline Spanish speech recognition (original archive in `frontend/models-src/vosk/`; published as <25 MiB parts in
+  `frontend/public/models/vosk/parts/`, see `npm run split:model`).
 - Status: verified (2026-11-15)
 
 ### Simulated device values (no external dataset)
 
-- Used for: blood pressure 112/72, SpO₂ 98 %, body temperature 36.7 °C, nominal pulse 68 bpm when
-  no WESAD series is available (fixed per demo scenario in `frontend/src/config/demoScenarios.ts`), plus
-  seeded history variation (HR ±3, BP ±4/±3, temp ±0.2, SpO₂ ±1).
+- Used for: today's values fixed per demo scenario in `frontend/src/config/demoScenarios.ts`
+  (source: `docs/base-vital-home-data-mapping.md` §4), plus seeded history variation (HR ±3, BP ±4/±3,
+  temp ±0.2, SpO₂ ±1). Today's pulse is always the scenario value; the WESAD series only seeds history.
+  | Scenario | Pressure | Pulse | SpO₂ | Temp | Prior nights |
+  |---|---|---|---|---|---|
+  | normal | 112/72 | 64 | 98 | 36.6 | 7.2, 7.8 |
+  | ca4 | 118/76 | 72 | 98 | 36.8 | 7.1, 7.4 |
+  | missing_sensor | — (null) | 66 | 97 | 36.7 | 7.0, 7.6 |
+  | low_temp | 114/74 | 66 | 97 | 35.6 | 7.1, 7.5 |
+  | voice_not_understood | 112/72 | 64 | 98 | 36.6 | 7.2, 7.8 |
 - Status: simulated, shown in the app as "equipo simulado".
 
 ## Threshold sources (RN1)

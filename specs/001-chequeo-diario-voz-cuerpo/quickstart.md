@@ -8,7 +8,7 @@ How to run the app and check CA1–CA8 by hand (Principle IV). Shapes and names:
 - Chromium-based browser (Chrome/Edge) on a laptop or Android tablet, with a microphone.
 - Blender 4.x only if you rebuild the model.
 - Assets in place under `frontend/`: `public/models/body.glb`, `public/models/body-fallback.png`,
-  `public/models/vosk/vosk-model-small-es-0.42.tar.gz`, `public/logo.svg`, `public/avatars/`,
+  `public/models/vosk/parts/` (manifest + parts of the Vosk model; original in `models-src/vosk/`), `public/logo.svg`, `public/avatars/`,
   `data/wesad-hr.json`, `data/sleep-history.json`, `data/SOURCES.md`.
 
 ## Commands (developer)
@@ -28,7 +28,7 @@ below is done **inside the app**, with the "Escenario de demo" selector on Home 
 | # | Scenario in selector | Do this | Expect |
 |---|---|---|---|
 | CA1 | Normal | Tap **Vita**, answer: "cinco horas" → "sí" → "cuatro" → "sí" → "no". Time it. | Check-in finishes in ≤ 60 s. |
-| CA2 | Normal | At the sleep question say "cinco horas". | Vita says "Escuché 5 horas. ¿Correcto?" before anything is saved. |
+| CA2 | Normal | At the sleep question say "cinco horas". | Vita says "Escuché que dormiste 5 horas. ¿Es correcto?" before anything is saved. |
 | CA3 | Normal | Watch the body while Vita asks about sleep. | The forehead dot is highlighted. |
 | CA4 | CA4 | Answer sleep "cinco horas", mood "cuatro", symptoms "no". | Forehead dot shows "Sueño · atención"; verdict "atención" with "Dormiste poco: tómalo con calma". Same result every run. |
 | CA5 | Normal | Drag to rotate the body left and right. | Every dot stays on its spot (forehead, chest, arm, abdomen, fingertip). |
@@ -63,7 +63,7 @@ below is done **inside the app**, with the "Escenario de demo" selector on Home 
 | SC-012 | Normal | Tap each body dot. | Its metric row is highlighted. |
 | SC-013 | CA4 | Look at the Presión bar. | The marker for 118 sits between 90 and 120 on the bar; every other marker sits on its value. |
 | FR-014/015 | Normal | Look at the top of Home. | "Hola, Ana", "Día N · Luz n/14"; "Ahora" with Chequeo diario, its time, 1 min, progress and "Empezar"; "Después" with at most 2 items and the pending count. |
-| FR-018 | Normal | Tap Salud, Agenda, Guía. | Nothing opens; each says "Próximamente". |
+| FR-018 | Normal | Tap Salud, Agenda, Guía; hover one. | Nothing opens; each shows only a gray icon and name; the tooltip says "Próximamente". |
 | Colors | Normal | Compare dots and badges. | No sensor dot has the color of any status badge; "Bien" is slate gray. |
 
 ## Before the demo

@@ -59,6 +59,7 @@ parseUtterance(step: StepKind, transcript: string): Observation | Intent | null
 // libs/health-rules
 evaluateCheck(input: { observations; symptoms; history: CheckRecord[] }):
   { readings: Record<SensorKey, SensorReading>; verdict: Verdict; actionKey: string }
+// actionKey is '' when the verdict is ok (no action); non-empty for attention and alert.
 computeBaseline(history: CheckRecord[]): Record<string, Baseline>
 checkinReducer(state: CheckinState, event: CheckinEvent): { state: CheckinState; effects: Effect[] }
 ```
