@@ -4,7 +4,6 @@ import { Card } from '../../src/ui/components/Card';
 import { SectionHeader } from '../../src/ui/components/SectionHeader';
 import { Badge } from '../../src/ui/components/Badge';
 import { Button } from '../../src/ui/components/Button';
-import { StatCard } from '../../src/ui/components/StatCard';
 import { messages } from '../../src/config/messages.es';
 
 afterEach(() => {
@@ -112,33 +111,5 @@ describe('Button', () => {
 
     fireEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
-  });
-});
-
-describe('StatCard', () => {
-  it('renders the label and the value', () => {
-    render(<StatCard label={messages['level.green']} value="62 bpm" />);
-
-    expect(screen.getByText(messages['level.green'])).toBeInTheDocument();
-    expect(screen.getByText('62 bpm')).toBeInTheDocument();
-  });
-
-  it('renders the value with the neutral text-ink class and no level color class', () => {
-    render(<StatCard label={messages['level.green']} value="62 bpm" />);
-
-    const value = screen.getByText('62 bpm');
-    expect(value).toHaveClass('text-ink');
-    expect(value.className).not.toMatch(/text-level-/);
-    expect(value.className).not.toMatch(/bg-level-/);
-  });
-
-  it('renders the optional children slot', () => {
-    render(
-      <StatCard label={messages['level.green']} value="62 bpm">
-        <span>{messages['team.criterion']}</span>
-      </StatCard>,
-    );
-
-    expect(screen.getByText(messages['team.criterion'])).toBeInTheDocument();
   });
 });

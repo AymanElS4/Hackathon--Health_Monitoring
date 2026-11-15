@@ -82,6 +82,12 @@ const config: Config = {
         bodyArea: px(TOKENS.size.bodyArea),
         levelMarker: px(TOKENS.size.levelMarker),
         metricIcon: px(TOKENS.size.metricIcon),
+        rangeBar: px(TOKENS.size.rangeBar),
+        rangeMarker: px(TOKENS.size.rangeMarker),
+        rangeBaseline: px(TOKENS.size.rangeBaseline),
+        rangePointer: px(TOKENS.size.rangePointer),
+        rangeBubbleRow: px(TOKENS.size.rangeBubbleRow),
+        rangeCutRow: px(TOKENS.size.rangeCutRow),
       },
       width: {
         touch: px(TOKENS.size.touchTarget),
@@ -93,9 +99,12 @@ const config: Config = {
         sensorRing: px(TOKENS.size.sensorRing),
         levelMarker: px(TOKENS.size.levelMarker),
         metricIcon: px(TOKENS.size.metricIcon),
+        rangeMarker: px(TOKENS.size.rangeMarker),
+        rangePointer: px(TOKENS.size.rangePointer),
       },
       borderWidth: {
         sensor: px(TOKENS.size.sensorOutline),
+        rangeMarker: px(TOKENS.size.rangeMarkerOutline),
       },
       opacity: {
         'sensor-halo': '0.3',

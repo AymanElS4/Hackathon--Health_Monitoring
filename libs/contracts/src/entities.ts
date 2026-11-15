@@ -109,6 +109,8 @@ export const Threshold = z
     red: RangeBand,
     /** Consecutive readings needed to make `red` (sleep 3 nights, mood 2 days). */
     consecutiveForRed: z.number().int().positive().optional(),
+    /** `red` only with a reported symptom (pulse < 50, RN1). Without one the value is amber. */
+    requiresSymptoms: z.boolean().optional(),
     /** Blood pressure only: which component of the reading this entry applies to. */
     component: z.enum(['systolic', 'diastolic']).optional(),
     source: z.string().min(1).optional(),

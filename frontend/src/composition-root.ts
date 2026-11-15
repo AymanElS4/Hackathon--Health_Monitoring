@@ -1,6 +1,9 @@
 import { DEFAULT_SCENARIO_ID, DEMO_SCENARIOS } from './config/demoScenarios';
 import { DEMO_AGENDA } from './config/agenda';
 import { DemoScenario, DemoScenarioId } from '@base-vital/contracts';
+import { reseedScenario, seedIfEmpty } from './application/use-cases/seedHistory';
+import { withTimeout } from './application/use-cases/withTimeout';
+import { SEED_TIMEOUT_MS } from './config/constants';
 import { SimulatedDevices } from './adapters/simulated-devices/SimulatedDevices';
 import { IdbCheckRepository } from './adapters/indexeddb/IdbCheckRepository';
 import { StaticAgenda } from './adapters/static-agenda/StaticAgenda';
@@ -94,8 +97,12 @@ export interface AppContainer {
   synthesizer: SpeechSynthesizerPort;
   /** Builds a fresh check-in runner wired to this container's ports. */
   createCheckinRunner: () => CheckinRunner;
-  /** WESAD resting pulse series (bpm) when `data/wesad-hr.json` is present; used by T088. */
+  /** WESAD resting pulse series (bpm) when `data/wesad-hr.json` is present; used for seeding. */
   wesadSeries?: number[];
+  /** Startup: writes the simulated history of the active scenario when the store is empty. */
+  seedHistoryIfEmpty: () => Promise<void>;
+  /** Scenario change: clears the store and writes the simulated history of scenario `id`. */
+  reseedHistory: (id: DemoScenarioId) => Promise<void>;
   /** Storage that keeps the demo scenario id (localStorage in the browser). */
   storage: StorageLike | undefined;
 }
@@ -148,10 +155,19 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
         agenda,
         clock,
         repository,
-        evaluate: (state) => evaluateFromState(state, { at: clock.now().toISOString() }),
+        evaluate: (state, history) =>
+          evaluateFromState(state, { at: clock.now().toISOString(), history }),
         script: checkinScripts.daily,
       }),
     wesadSeries: WESAD_SERIES,
+    // Bounded: a seed that fails or does not settle in SEED_TIMEOUT_MS rejects, and the app renders anyway.
+    seedHistoryIfEmpty: () =>
+      withTimeout(
+        seedIfEmpty(repository, scenario, { now: clock.now(), wesadSeries: WESAD_SERIES }),
+        SEED_TIMEOUT_MS,
+      ),
+    reseedHistory: (id) =>
+      reseedScenario(repository, DEMO_SCENARIOS[id], { now: clock.now(), wesadSeries: WESAD_SERIES }),
     storage,
   };
 }

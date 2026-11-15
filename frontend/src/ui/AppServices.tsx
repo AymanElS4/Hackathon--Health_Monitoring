@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import type { DemoScenario } from '@base-vital/contracts';
+import type { DemoScenario, DemoScenarioId } from '@base-vital/contracts';
 import type {
   AgendaPort,
   CheckRepositoryPort,
@@ -26,6 +26,8 @@ export interface AppContainer {
   createCheckinRunner: () => CheckinRunner;
   /** Keeps the demo scenario id; undefined when the browser has no storage. */
   storage: StorageLike | undefined;
+  /** Scenario change: clears the store and writes the simulated history of scenario `id`. */
+  reseedHistory?: (id: DemoScenarioId) => Promise<void>;
 }
 
 const AppServicesContext = createContext<AppContainer | null>(null);

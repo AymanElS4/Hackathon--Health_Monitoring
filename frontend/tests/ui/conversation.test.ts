@@ -25,6 +25,7 @@ function snapshot(patch: Partial<CheckinSnapshot> = {}): CheckinSnapshot {
     nextItem: null,
     saveFailed: false,
     readings: [],
+    observations: [],
     speaking: false,
     spoken: [],
     pending: null,
@@ -252,5 +253,17 @@ describe('advanceConversation', () => {
 
     expect(texts(state.messages)).toEqual(['verdict', t('checkin.yes')]);
     expect(state.messages.filter((message) => message.kind === 'vita')).toHaveLength(0);
+  });
+
+  it('the CL4 mood re-ask is a Vita line (ask_mood step), before the re-asked answer', () => {
+    const state = run([
+      snapshot({ step: 'measuring', spoken: [line(1, t('measure'), 'measuring')] }),
+      snapshot({
+        step: 'ask_mood',
+        spoken: [line(1, t('measure'), 'measuring'), line(2, t('ask.mood.again'), 'ask_mood')],
+      }),
+    ]);
+
+    expect(state.messages.at(-1)).toEqual({ kind: 'vita', id: 'line-2', text: t('ask.mood.again') });
   });
 });

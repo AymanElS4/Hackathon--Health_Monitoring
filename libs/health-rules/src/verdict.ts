@@ -16,7 +16,10 @@ export interface IndicatorOutcome {
 export interface VerdictInput {
   outcomes: readonly IndicatorOutcome[];
   symptoms: readonly Symptom[];
-  /** Reserved for US4 ("fuera de tu normal"). Always false until then. */
+  /**
+   * Some sensor is outside its personal normal ("fuera de tu normal", RN3). A team criterion:
+   * it sets the action with `actionTeamCriterion` true.
+   */
   outsideNormal: boolean;
 }
 
@@ -106,7 +109,7 @@ function actionOf(facts: ActionFacts): ActionChoice {
     return choice(key, ambers[0].teamCriterion);
   }
   if (facts.symptomReported) return choice('action.symptom');
-  if (facts.outsideNormal) return choice('action.outside_normal');
+  if (facts.outsideNormal) return choice('action.outside_normal', true);
   if (facts.inDoubt) return choice('action.in_doubt');
   if (facts.missing) return choice('action.missing_data');
   return choice('');

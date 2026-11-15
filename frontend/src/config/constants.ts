@@ -1,4 +1,4 @@
-import type { Level, SensorKey } from '@base-vital/contracts';
+import type { BaselineIndicator, Indicator, Level, SensorKey } from '@base-vital/contracts';
 import { TOKENS } from './design-tokens';
 
 /**
@@ -59,6 +59,23 @@ export const FALLBACK_DOTS: Readonly<Record<SensorKey, { readonly x: number; rea
   oxygen: { x: 13.0, y: 42.3 },
 };
 
+/** Display scale of one metric range bar (docs/base-vital-home-data-mapping.md §1). */
+export interface UiScale {
+  readonly min: number;
+  readonly max: number;
+  /** Key into `src/config/messages.es.ts` for the unit shown next to the scale. */
+  readonly unitKey: string;
+}
+
+/** Range bar scales per body sensor. Values outside a scale are clamped by the layout. */
+export const UI_SCALES: Readonly<Record<SensorKey, UiScale>> = {
+  pressure: { min: 90, max: 160, unitKey: 'unit.pressure' },
+  pulse: { min: 40, max: 130, unitKey: 'unit.pulse' },
+  oxygen: { min: 85, max: 100, unitKey: 'unit.oxygen' },
+  temperature: { min: 35, max: 39, unitKey: 'unit.temperature' },
+  sleep: { min: 0, max: 10, unitKey: 'unit.sleep' },
+} satisfies Record<SensorKey, UiScale>;
+
 /** How long one voice listen waits for an answer before resolving null (ms). */
 export const LISTEN_TIMEOUT_MS = 8000;
 
@@ -68,6 +85,24 @@ export const SOON_TOOLTIP_MS = 2000;
 /** Big-button sleep options: first and last hour, and the step between two options (hours). */
 export const SLEEP_HOURS_MIN = 0;
 export const SLEEP_HOURS_STEP = 0.5;
+
+/** Observation indicator that carries each body sensor's number (range bar marker). */
+export const SENSOR_INDICATOR: Readonly<Record<SensorKey, Indicator>> = {
+  sleep: 'sleep_hours',
+  pulse: 'resting_heart_rate',
+  pressure: 'blood_pressure',
+  temperature: 'body_temperature',
+  oxygen: 'oxygen_saturation',
+} satisfies Record<SensorKey, Indicator>;
+
+/** Baseline indicator ("tu normal") that brackets each body sensor. Blood pressure uses the systolic baseline. */
+export const SENSOR_BASELINE: Readonly<Record<SensorKey, BaselineIndicator>> = {
+  sleep: 'sleep_hours',
+  pulse: 'resting_heart_rate',
+  pressure: 'systolic',
+  temperature: 'body_temperature',
+  oxygen: 'oxygen_saturation',
+} satisfies Record<SensorKey, BaselineIndicator>;
 
 /** Order of the metric rows in "Estado de Ana" (mockup order, not `SensorKey` order). */
 export const METRIC_ORDER: readonly SensorKey[] = ['pressure', 'pulse', 'oxygen', 'temperature', 'sleep'];
@@ -89,6 +124,9 @@ export const CHECKIN_PATH = '/checkin';
 
 /** How long a check-in save may take before it counts as failed (ms). */
 export const SAVE_TIMEOUT_MS = 5000;
+
+/** How long the startup seeding of the simulated history may take before the app renders anyway (ms). */
+export const SEED_TIMEOUT_MS = 5000;
 
 /** 3D body model (`public/models/body.glb`). Node names are fixed by contracts/body-glb.md. */
 export const BODY_MODEL_URL = '/models/body.glb';

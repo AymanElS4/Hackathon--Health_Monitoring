@@ -58,7 +58,7 @@ below is done **inside the app**, with the "Escenario de demo" selector on Home 
 | # | Scenario in selector | Do this | Expect |
 |---|---|---|---|
 | SC-009 | Normal | Unplug the network cable / turn wifi off, reload Home. | Logo, avatar, body and icons all show; no broken images; header says "Sin internet · todo funciona". |
-| SC-010 | CA4 | Finish the CA4 check-in, go back to Home. | Header "Estado de Ana · Hoy: Atención · Ánimo 4/5*"; "Atención" appears once in the header; legend and "* Ánimo: criterio del equipo, no clínico" at the bottom. |
+| SC-010 | CA4 | Finish the CA4 check-in, go back to Home. | Header "Estado de Ana · Hoy: Atención · Ánimo 4/5*"; "Atención" appears once in the header; legend and "* criterio del equipo, no clínico" at the bottom. |
 | SC-011 | CA4 | Look at the Sueño row. | "Sueño 5 h · Atención"; the number "5" is in neutral text color, only the badge, ring and zone are amber. |
 | SC-012 | Normal | Tap each body dot. | Its metric row is highlighted. |
 | SC-013 | CA4 | Look at the Presión bar. | The marker for 118 sits between 90 and 120 on the bar; every other marker sits on its value. |

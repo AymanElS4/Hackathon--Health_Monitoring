@@ -18,7 +18,8 @@ import type { StorageLike } from '../../src/application/use-cases/selectDemoScen
 import { DEMO_AGENDA } from '../../src/config/agenda';
 import { DEMO_SCENARIOS } from '../../src/config/demoScenarios';
 import { messages, t } from '../../src/config/messages.es';
-import { HISTORY_PATH } from '../../src/config/constants';
+import { HISTORY_PATH, METRIC_ORDER } from '../../src/config/constants';
+import { ca4Check } from './ca4Check';
 
 /** Local 09:20 on the demo day: "Chequeo diario" (09:30) is the current item. */
 const DEMO_NOW = new Date(2026, 10, 15, 9, 20);
@@ -436,5 +437,83 @@ describe('Home "Estado de Ana" rows with a check today', () => {
 
     const pulseRow = rowOf(t('sensor.pulse'));
     expect(within(pulseRow).getByText(t('status.verdict.ok'))).toBeInTheDocument();
+  });
+});
+
+/** The metric row (li) of a sensor on the Home card, found by its name. */
+function homeRowFor(sensor: SensorKey): HTMLElement {
+  const row = Array.from(document.querySelectorAll<HTMLElement>('li[data-highlighted]')).find((item) =>
+    item.textContent?.includes(t(`sensor.${sensor}`)),
+  );
+  if (row === undefined) throw new Error(`no row for ${sensor}`);
+  return row;
+}
+
+describe('Home status rows with range bars (T091)', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('with the CA4 check, every row has its range bar with a marker on its value', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.save(ca4Check());
+    renderHome(buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository));
+
+    await waitFor(() => expect(document.querySelectorAll('[data-testid="range-marker"]')).toHaveLength(METRIC_ORDER.length));
+    expect(homeRowFor('sleep').querySelector('[data-testid="range-bubble"]')).toHaveTextContent(t('value.sleep_hours', { value: 5 }));
+  });
+
+  it('CA4: the sleep bar has an amber zone and its marker at 5 h of 0–10 h (50 %)', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.save(ca4Check());
+    renderHome(buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository));
+
+    await waitFor(() => expect(homeRowFor('sleep').querySelector('[data-testid="range-marker"]')).not.toBeNull());
+    const row = homeRowFor('sleep');
+    expect(parseFloat((row.querySelector('[data-testid="range-marker"]') as HTMLElement).style.left)).toBeCloseTo(50);
+    expect(row.querySelector('[data-testid="range-zone"][data-level="amber"]')).not.toBeNull();
+  });
+
+  it('CA4: the blood pressure marker sits on 118 of 90–160 mmHg (40 %, SC-013)', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.save(ca4Check());
+    renderHome(buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository));
+
+    await waitFor(() => expect(homeRowFor('pressure').querySelector('[data-testid="range-marker"]')).not.toBeNull());
+    const marker = homeRowFor('pressure').querySelector('[data-testid="range-marker"]') as HTMLElement;
+    expect(parseFloat(marker.style.left)).toBeCloseTo(40);
+  });
+
+  it('CL3: fewer than 14 days, so every row with a bar says "Aún aprendo tu normal"', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.save(ca4Check());
+    renderHome(buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository));
+
+    await waitFor(() => expect(screen.getAllByText(t('baseline.learning'))).toHaveLength(METRIC_ORDER.length));
+  });
+
+  it('tapping a body dot highlights its row and no other', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.save(ca4Check());
+    renderHome(buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository));
+    await waitFor(() => expect(document.querySelectorAll('[data-testid="range-marker"]')).toHaveLength(METRIC_ORDER.length));
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${t('sensor.oxygen')}`) }));
+
+    expect(homeRowFor('oxygen')).toHaveAttribute('data-highlighted', 'true');
+    expect(document.querySelectorAll('li[data-highlighted="true"]')).toHaveLength(1);
+  });
+
+  it('tapping a row highlights it and focuses its body dot (both ways, FR-017)', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.save(ca4Check());
+    renderHome(buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository));
+    await waitFor(() => expect(document.querySelectorAll('[data-testid="range-marker"]')).toHaveLength(METRIC_ORDER.length));
+
+    fireEvent.click(homeRowFor('pulse'));
+
+    expect(homeRowFor('pulse')).toHaveAttribute('data-highlighted', 'true');
+    expect(document.querySelector('button[data-sensor="pulse"] .sensor-dot__halo')).not.toBeNull();
+    expect(document.querySelectorAll('.sensor-dot__halo')).toHaveLength(1);
   });
 });

@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import { Pause } from 'lucide-react';
+import type { CheckRecord } from '@base-vital/contracts';
 import type { CheckinSnapshot } from '../../application/use-cases/runCheckin';
+import { metricReadingsOf } from '../../application/use-cases/metricReadings';
+import { priorChecksOf } from '../../application/use-cases/previousChecks';
 import { HISTORY_PATH, HOME_PATH } from '../../config/constants';
 import { t } from '../../config/messages.es';
+import { useAppServices } from '../AppServices';
 import { useCheckin } from '../useCheckin';
 import { useConversation } from '../useConversation';
 import type { ChatMessage } from '../conversation';
@@ -11,6 +15,7 @@ import { usePrefersReducedMotion } from '../body3d/usePrefersReducedMotion';
 import { LazyBodyViewer } from '../body3d/LazyBodyViewer';
 import { BigButtons } from '../components/BigButtons';
 import { Button } from '../components/Button';
+import { MetricRows } from '../components/MetricRows';
 import { SectionHeader } from '../components/SectionHeader';
 import { VerdictPanel } from '../components/VerdictPanel';
 import { AnaBubble, VitaBubble, VitaRow } from '../components/chat/ChatBubble';
@@ -66,8 +71,8 @@ function Indent({ children }: { children: ReactNode }) {
   );
 }
 
-/** One message of the transcript (T080a). */
-function renderMessage(message: ChatMessage) {
+/** One message of the transcript (T080a). `summary` goes inside the verdict message (T091); `verdictRef` marks its start. */
+function renderMessage(message: ChatMessage, summary: ReactNode, verdictRef: RefObject<HTMLDivElement>) {
   switch (message.kind) {
     case 'vita':
       return (
@@ -80,12 +85,15 @@ function renderMessage(message: ChatMessage) {
     case 'verdict':
       return (
         <VitaRow key={message.id}>
-          <VerdictPanel
-            verdict={message.verdict}
-            actionKey={message.actionKey}
-            actionParams={message.actionParams}
-            next={message.next}
-          />
+          <div ref={verdictRef} className="min-w-0">
+            <VerdictPanel
+              verdict={message.verdict}
+              actionKey={message.actionKey}
+              actionParams={message.actionParams}
+              next={message.next}
+              summary={summary}
+            />
+          </div>
         </VitaRow>
       );
   }
@@ -101,11 +109,18 @@ export function CheckIn() {
   const history = useHistory();
   const { snapshot, bodyView, start, pause, resume, repeat, answerButton, answer, fakeListening } = useCheckin();
   const messages = useConversation(snapshot);
+  const services = useAppServices();
+  const hasOutcome = snapshot.outcome !== null;
+  /** Previous days' checks, for the "tu normal" marks of the summary rows; loaded once the verdict is known. */
+  const [previousChecks, setPreviousChecks] = useState<CheckRecord[]>([]);
   const reducedMotion = usePrefersReducedMotion();
   const [autostart] = useState(() => location.state?.autostart === true);
   // Guards against a second start, e.g. when React StrictMode re-runs the effect in development.
   const started = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
+  /** The verdict message, once it is on screen: the log opens at its start, so the headline stays visible. */
+  const verdictRef = useRef<HTMLDivElement>(null);
+  const anchoredToVerdict = useRef(false);
   const [draft, setDraft] = useState('');
 
   useEffect(() => {
@@ -113,6 +128,29 @@ export function CheckIn() {
     started.current = true;
     void start();
   }, [autostart, start]);
+
+  useEffect(() => {
+    if (!hasOutcome) return;
+    let active = true;
+    void priorChecksOf(services.repository, services.clock).then((checks) => {
+      if (active) setPreviousChecks(checks);
+    });
+    return () => {
+      active = false;
+    };
+  }, [hasOutcome, services]);
+
+  const summaryRows = useMemo(
+    () =>
+      metricReadingsOf({
+        readings: snapshot.readings,
+        observations: snapshot.observations,
+        previousChecks,
+      }),
+    [snapshot.readings, snapshot.observations, previousChecks],
+  );
+  // The same metric rows as Home, shown inside the verdict message once the verdict is known.
+  const summary = hasOutcome ? <MetricRows readings={summaryRows} focus={bodyView.focus} /> : undefined;
 
   const done = snapshot.step === 'saved';
   const chipStep = chipStepOf(snapshot);
@@ -122,10 +160,20 @@ export function CheckIn() {
   });
 
   // Keeps the newest message (or the quick replies, or the end) in view. jsdom has no scrollIntoView.
+  // Before the verdict the log follows the newest line. Once the verdict is on screen, the log opens at
+  // the verdict's start (its title and rows stay visible) and does not jump to the end afterwards.
   useEffect(() => {
+    const behavior = reducedMotion ? 'auto' : 'smooth';
+    const verdict = verdictRef.current;
+    if (verdict !== null) {
+      if (anchoredToVerdict.current || typeof verdict.scrollIntoView !== 'function') return;
+      anchoredToVerdict.current = true;
+      verdict.scrollIntoView({ block: 'start', behavior });
+      return;
+    }
     const node = endRef.current;
     if (node === null || typeof node.scrollIntoView !== 'function') return;
-    node.scrollIntoView({ block: 'end', behavior: reducedMotion ? 'auto' : 'smooth' });
+    node.scrollIntoView({ block: 'end', behavior });
   }, [messages.length, chipStep, snapshot.buttonsFor, done, reducedMotion]);
 
   const submitAnswer = (event: FormEvent<HTMLFormElement>) => {
@@ -155,7 +203,7 @@ export function CheckIn() {
             )}
           </div>
           <div role="log" aria-live="polite" className="flex min-h-0 flex-1 flex-col gap-md overflow-y-auto pb-md pr-md">
-            {messages.map(renderMessage)}
+            {messages.map((message) => renderMessage(message, summary, verdictRef))}
             {chipStep !== null && (
               <Indent>
                 {hintKeyOf(chipStep) !== null && (

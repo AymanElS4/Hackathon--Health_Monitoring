@@ -7,7 +7,6 @@ import type { SensorKey } from '@base-vital/contracts';
 import { LISTEN_TIMEOUT_MS, SAVE_TIMEOUT_MS } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { checkinReducer, createCheckinState } from '../../domain/checkin/checkinReducer';
-import type { CheckinState } from '../../domain/checkin/checkinReducer';
 import type { CheckinEvent, CheckinScript, Effect, StepId } from '../../domain/checkin/types';
 import type {
   AgendaPort,
@@ -24,9 +23,11 @@ import {
   type CheckinEvaluation,
   type EvaluationFacts,
 } from './checkinEvaluation';
-import { buildCheckRecord } from './buildCheckRecord';
+import { buildCheckRecord, observationsOf } from './buildCheckRecord';
 import { withTimeout } from './withTimeout';
 import { readDeviceObservations } from './readDeviceObservations';
+import { pulseOutsideNormalOf } from './pulseOutsideNormal';
+import { priorChecksOf, type EvaluateHook } from './previousChecks';
 
 export type { CheckinSnapshotOutcome, NextItem } from './checkinEvaluation';
 export type { CheckinSnapshot, SpokenLine } from './checkinSnapshot';
@@ -40,8 +41,8 @@ export interface CheckinDeps {
   clock: ClockPort;
   /** Persists the finished check-in (T093). */
   repository: CheckRepositoryPort;
-  /** Verdict rules (US5); receives the reducer state when measuring is done. */
-  evaluate: (state: CheckinState) => Promise<CheckinEvaluation> | CheckinEvaluation;
+  /** Verdict rules (US5); get the reducer state and the previous days' checks, newest first. */
+  evaluate: EvaluateHook;
   script: CheckinScript;
 }
 
@@ -86,6 +87,7 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
       nextItem: evaluation.nextItem,
       saveFailed: view.saveFailed,
       readings: verdictResult === null ? [] : evaluatedReadings(verdictResult),
+      observations: observationsOf(state, deps.clock.now().toISOString()),
       speaking: view.speaking,
       spoken: spokenLines,
       pending: state.pending,
@@ -146,7 +148,7 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
       case 'readDevices':
         return readDevices(effect.indicators);
       case 'evaluate': {
-        const result = await deps.evaluate(state);
+        const result = await deps.evaluate(state, await priorChecksOf(deps.repository, deps.clock));
         verdictResult = result;
         evaluation = evaluationFacts(result, deps.agenda, deps.clock.now());
         return dispatch({
@@ -211,9 +213,16 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
     return dispatch({ type: 'saved' });
   }
 
+  /**
+   * Reads one measuring stage. The pulse stage also tells the reducer whether the pulse is outside
+   * "tu normal" (CL4), from the saved history; a history that cannot be read means no re-ask.
+   */
   async function readDevices(indicators: readonly string[]): Promise<void> {
     const observations = await readDeviceObservations(deps.devices, indicators);
-    return dispatch({ type: 'devicesRead', observations });
+    const outside = indicators.includes('resting_heart_rate')
+      ? await pulseOutsideNormalOf(deps.repository, deps.clock, observations)
+      : undefined;
+    return dispatch({ type: 'devicesRead', observations, pulseOutsideNormal: outside });
   }
 
   return {

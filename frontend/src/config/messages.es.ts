@@ -12,6 +12,7 @@ export const messages: Record<string, string> = {
   'confirm.sleep.one': 'Escuché que dormiste 1 hora. ¿Es correcto?',
   'ask.mood': 'Del uno al cinco, ¿cómo te sientes?',
   'confirm.mood': 'Escuché que tu ánimo es {mood} de 5. ¿Es correcto?',
+  'ask.mood.again': 'Antes de seguir, ¿cómo te sientes? Dime un número del uno al cinco.',
   'ask.symptoms': '¿Tienes algún síntoma?',
   measure: 'Ahora tomo tus signos.',
   'retry.sleep': 'No te entendí bien, ¿me lo repites? Dime un número entre 0 y 16.',
@@ -75,6 +76,13 @@ export const messages: Record<string, string> = {
   'value.mood': '{value}',
   'value.missing': '—',
 
+  // Unit shown next to a range bar scale (UI_SCALES, config/constants.ts)
+  'unit.pressure': 'mmHg',
+  'unit.pulse': 'lpm',
+  'unit.oxygen': '%',
+  'unit.temperature': '°C',
+  'unit.sleep': 'h',
+
   // Sensor names inside a sentence, e.g. "Falta el dato de la presión" (action.missing_data)
   'sensor.lower.sleep': 'el sueño',
   'sensor.lower.pulse': 'el pulso',
@@ -90,6 +98,7 @@ export const messages: Record<string, string> = {
   // Baseline, simulation and navigation
   'baseline.learning': 'Aún aprendo tu normal',
   'device.simulated': 'equipo simulado',
+  'meta.separator': '·',
   'history.simulated': 'simulado',
   'history.source.voice': 'voz',
   'history.source.device': 'equipo',
@@ -195,6 +204,14 @@ export const messages: Record<string, string> = {
   'status.verdict.ok': 'Bien',
   'status.verdict.attention': 'Atención',
   'status.verdict.alert': 'Alerta',
+
+  // Allowed range of a metric row, derived from the green band of the thresholds (CA7)
+  'allowed.range': '{min}–{max}',
+  'allowed.atLeast': '≥ {value}',
+  'allowed.atLeastHours': '≥ {value} h',
+  'allowed.below': '< {value}',
+  'allowed.bloodPressure': '< {systolic}/{diastolic}',
+  'allowed.shown': 'Permitido {range}',
 
   // Legend under "Estado de Ana" (docs/design/README.md)
   'legend.allowed': 'Permitido',

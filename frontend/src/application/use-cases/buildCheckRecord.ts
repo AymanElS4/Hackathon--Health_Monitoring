@@ -32,15 +32,17 @@ function voiceObservation(value: VoiceValue, at: string): Observation {
   });
 }
 
+/** The observations of a check: confirmed voice values first, then the device values (the record's order). */
+export function observationsOf(state: CheckinState, at: string): Observation[] {
+  return [...state.confirmedVoice.map((value) => voiceObservation(value, at)), ...state.confirmed];
+}
+
 /** A parsed record of a real check-in: `simulated` is false. Throws when the record is invalid. */
 export function buildCheckRecord(input: BuildCheckRecordInput): CheckRecord {
   const at = input.now.toISOString();
   return CheckRecord.parse({
     id: at,
-    observations: [
-      ...input.state.confirmedVoice.map((value) => voiceObservation(value, at)),
-      ...input.state.confirmed,
-    ],
+    observations: observationsOf(input.state, at),
     symptoms: input.state.symptoms,
     readings: input.readings,
     verdict: input.verdict,

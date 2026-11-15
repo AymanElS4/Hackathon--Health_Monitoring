@@ -2,7 +2,7 @@
  * Read-only view of the check-in runner (T052, T080a): what the screen reads from the runner. Kept
  * apart from the runner so that its file stays small; `runCheckin.ts` re-exports both types.
  */
-import type { SensorKey, SensorReading, Symptom } from '@base-vital/contracts';
+import type { Observation, SensorKey, SensorReading, Symptom } from '@base-vital/contracts';
 import type { CheckinState, VoiceValue } from '../../domain/checkin/checkinReducer';
 import type { StepId } from '../../domain/checkin/types';
 import type { CheckinSnapshotOutcome, NextItem } from './checkinEvaluation';
@@ -29,6 +29,8 @@ export interface CheckinSnapshot {
   saveFailed: boolean;
   /** Readings of the evaluation for the body (T080); empty until the check is evaluated. */
   readings: SensorReading[];
+  /** Observations of the check so far (device values and confirmed voice values); the markers of the summary rows (T091). */
+  observations: readonly Observation[];
   /** Vita is speaking now (T080a mic indicator). */
   speaking: boolean;
   /** Every line Vita spoke, in order (T080a transcript). */

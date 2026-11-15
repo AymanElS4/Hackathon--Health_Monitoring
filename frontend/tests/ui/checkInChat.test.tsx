@@ -177,10 +177,12 @@ describe('Check-in chat: transcript', () => {
     const back = await screen.findByRole('button', { name: t('checkin.backHome') });
 
     expect(back.textContent).toBe(t('checkin.backHome'));
-    const badge = screen.getByText(t('status.verdict.attention'));
+    // The verdict badge is the first "Atención" and comes before the save button; the sleep row
+    // of the summary (inside the verdict message, T091) is the second one.
+    const [badge, rowBadge] = screen.getAllByText(t('status.verdict.attention'));
     expect(badge.compareDocumentPosition(back) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('button', { name: t('checkin.backHome') })).toBeInTheDocument();
-    expect(screen.getAllByText(t('status.verdict.attention'))).toHaveLength(1);
+    expect(rowBadge.closest('li')).not.toBeNull();
   });
 
   it('auto-scrolls to the newest message when the screen can scroll (guarded for jsdom)', async () => {
