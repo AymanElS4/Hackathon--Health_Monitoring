@@ -28,7 +28,7 @@ below is done **inside the app**, with the "Escenario de demo" selector on Home 
 | # | Scenario in selector | Do this | Expect |
 |---|---|---|---|
 | CA1 | Normal | Tap **Vita**, answer: "cinco horas" → "sí" → "cuatro" → "sí" → "no". Time it. | Check-in finishes in ≤ 60 s. |
-| CA2 | Normal | At the sleep question say "cinco horas". | Vita says "Escuché que dormiste 5 horas. ¿Es correcto?" before anything is saved. |
+| CA2 | Normal | At the sleep question say "cinco horas". | The chat shows "5 horas" as Ana's bubble (dashed while it waits, solid after "sí"), and Vita says and shows "Escuché que dormiste 5 horas. ¿Es correcto?" with the hint "Di «sí» o «no»" and the chips 👍 Sí · 👎 No, before anything is saved. |
 | CA3 | Normal | Watch the body while Vita asks about sleep. | The forehead dot is highlighted. |
 | CA4 | CA4 | Answer sleep "cinco horas", mood "cuatro", symptoms "no". | Forehead dot shows "Sueño · atención"; verdict "atención" with "Dormiste poco: tómalo con calma". Same result every run. |
 | CA5 | Normal | Drag to rotate the body left and right. | Every dot stays on its spot (forehead, chest, arm, abdomen, fingertip). |

@@ -9,7 +9,7 @@ export interface StatusHeaderProps {
   /** `'none'` when there is no check today; shows "Sin chequeo hoy". */
   verdict: Verdict | 'none';
   mood: StatusMood | null;
-  /** Optional element at the right end of the title row (e.g. "Ver historial →"). It never wraps. */
+  /** Optional element at the right end of the title row (e.g. "Ver historial"). It never wraps. */
   trailing?: ReactNode;
 }
 

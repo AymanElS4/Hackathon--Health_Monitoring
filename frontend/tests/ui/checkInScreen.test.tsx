@@ -194,8 +194,8 @@ describe('Check-in screen', () => {
   });
 
   it.each([
-    { answer: 'siete y media', caption: 'Escuché 7,5 horas. ¿Correcto?' },
-    { answer: 'una', caption: 'Escuché 1 hora. ¿Correcto?' },
+    { answer: 'siete y media', caption: 'Escuché que dormiste 7,5 horas. ¿Es correcto?' },
+    { answer: 'una', caption: 'Escuché que dormiste 1 hora. ¿Es correcto?' },
   ])('reads "$answer" back in Spanish as "$caption"', async ({ answer: spoken, caption }) => {
     const voice = new FakeVoice({ mode: 'manual' });
     renderCheckIn(buildContainer(voice));
@@ -398,7 +398,7 @@ describe('Check-in big buttons (T060)', () => {
     });
 
     expect(screen.getByText(t('confirm.sleep', { hours: 7 }))).toBeInTheDocument();
-    expect(screen.getByText('Escuché 7 horas. ¿Correcto?')).toBeInTheDocument();
+    expect(screen.getByText('Escuché que dormiste 7 horas. ¿Es correcto?')).toBeInTheDocument();
     expect(screen.queryByText(t('checkin.buttonsHint'))).not.toBeInTheDocument();
   });
 });

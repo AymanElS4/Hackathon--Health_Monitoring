@@ -71,6 +71,7 @@ const config: Config = {
         dock: px(TOKENS.size.dockMax),
       },
       height: {
+        touch: px(TOKENS.size.touchTarget),
         avatar: px(TOKENS.size.avatar),
         vita: px(TOKENS.size.vita),
         iconCircle: px(TOKENS.size.iconCircle),
@@ -83,6 +84,7 @@ const config: Config = {
         metricIcon: px(TOKENS.size.metricIcon),
       },
       width: {
+        touch: px(TOKENS.size.touchTarget),
         avatar: px(TOKENS.size.avatar),
         vita: px(TOKENS.size.vita),
         iconCircle: px(TOKENS.size.iconCircle),

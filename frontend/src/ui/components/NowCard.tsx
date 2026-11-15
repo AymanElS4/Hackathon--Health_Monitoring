@@ -14,6 +14,8 @@ export interface NowCardProps {
 export function NowCard({ now, onStart }: NowCardProps) {
   const { done, total } = now.progress;
   const fraction = total === 0 ? 0 : done / total;
+  const hasAction = now.action === 'start_checkin';
+  const hasFooter = now.durationMin !== undefined || hasAction;
   const timeLabel =
     now.durationMin !== undefined ? t('home.timeChip', { time: now.time, min: now.durationMin }) : now.time;
 
@@ -43,22 +45,25 @@ export function NowCard({ now, onStart }: NowCardProps) {
             <div className="h-full origin-left bg-primary" style={{ transform: `scaleX(${fraction})` }} />
           </div>
         </div>
-        <footer className="mt-auto flex items-center justify-between gap-md border-t border-track pt-md">
-          {now.durationMin !== undefined ? (
-            <p className="text-meta text-ink-secondary">{t('home.estimated', { min: now.durationMin })}</p>
-          ) : (
-            <span />
-          )}
-          {/* "Empezar" starts the check-in only; any other item has nothing to start in 001. */}
-          {now.action === 'start_checkin' && (
-            <Button onClick={onStart} shape="pill">
-              <span className="inline-flex items-center gap-sm">
-                {t('home.start')}
-                <Play aria-hidden="true" className="h-lg w-lg" />
-              </span>
-            </Button>
-          )}
-        </footer>
+        {/* The footer (and its divider) only exists when it has an estimate or the action button. */}
+        {hasFooter && (
+          <footer className="mt-auto flex items-center justify-between gap-md border-t border-track pt-md">
+            {now.durationMin !== undefined ? (
+              <p className="text-meta text-ink-secondary">{t('home.estimated', { min: now.durationMin })}</p>
+            ) : (
+              <span />
+            )}
+            {/* "Empezar" starts the check-in only; any other item has nothing to start in 001. */}
+            {hasAction && (
+              <Button onClick={onStart} shape="pill">
+                <span className="inline-flex items-center gap-sm">
+                  {t('home.start')}
+                  <Play aria-hidden="true" className="h-lg w-lg" />
+                </span>
+              </Button>
+            )}
+          </footer>
+        )}
       </div>
     </Card>
   );

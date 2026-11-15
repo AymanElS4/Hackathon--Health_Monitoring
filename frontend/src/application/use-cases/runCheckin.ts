@@ -3,7 +3,7 @@
  * order through the ports, and feeds the results back as events. The script is typed here against
  * the domain `CheckinScript`. The `save` effect persists the record before `saved` is dispatched.
  */
-import type { SensorKey, SensorReading } from '@base-vital/contracts';
+import type { SensorKey } from '@base-vital/contracts';
 import { LISTEN_TIMEOUT_MS, SAVE_TIMEOUT_MS } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { checkinReducer, createCheckinState } from '../../domain/checkin/checkinReducer';
@@ -22,15 +22,15 @@ import {
   evaluationFacts,
   nextItemAt,
   type CheckinEvaluation,
-  type CheckinSnapshotOutcome,
   type EvaluationFacts,
-  type NextItem,
 } from './checkinEvaluation';
 import { buildCheckRecord } from './buildCheckRecord';
 import { withTimeout } from './withTimeout';
 import { readDeviceObservations } from './readDeviceObservations';
 
 export type { CheckinSnapshotOutcome, NextItem } from './checkinEvaluation';
+export type { CheckinSnapshot, SpokenLine } from './checkinSnapshot';
+import type { CheckinSnapshot, SpokenLine } from './checkinSnapshot';
 
 export interface CheckinDeps {
   recognizer: SpeechRecognizerPort;
@@ -43,23 +43,6 @@ export interface CheckinDeps {
   /** Verdict rules (US5); receives the reducer state when measuring is done. */
   evaluate: (state: CheckinState) => Promise<CheckinEvaluation> | CheckinEvaluation;
   script: CheckinScript;
-}
-
-export interface CheckinSnapshot {
-  step: CheckinState['step'];
-  paused: boolean;
-  focus: SensorKey | null;
-  caption: string | null;
-  listening: boolean;
-  outcome: CheckinSnapshotOutcome | null;
-  /** Step whose big buttons replace listening (two failed listens); `null` otherwise. */
-  buttonsFor: StepId | null;
-  /** Next activity, read when the verdict is known; `null` before that or when none is left. */
-  nextItem: NextItem | null;
-  /** True when the record could not be written; the check-in still ends (T093). */
-  saveFailed: boolean;
-  /** Readings of the evaluation for the body (T080); empty until the check is evaluated. */
-  readings: SensorReading[];
 }
 
 export interface CheckinRunner {
@@ -79,7 +62,9 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
     listening: false,
     buttonsFor: null as StepId | null,
     saveFailed: false,
+    speaking: false,
   };
+  let spokenLines: readonly SpokenLine[] = [];
   /** Set by the `evaluate` effect: team-criterion flag, action params and the next activity. */
   let evaluation: EvaluationFacts = { outcome: { teamCriterion: false, actionParams: {} }, nextItem: null };
   /** Full evaluation result, kept for the record written by the `save` effect (T093). */
@@ -101,9 +86,13 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
       nextItem: evaluation.nextItem,
       saveFailed: view.saveFailed,
       readings: verdictResult === null ? [] : evaluatedReadings(verdictResult),
+      speaking: view.speaking,
+      spoken: spokenLines,
+      pending: state.pending,
+      confirmedVoice: state.confirmedVoice,
+      symptoms: state.symptoms,
     };
   }
-
 
   function publish(patch: Partial<typeof view> = {}): void {
     view = { ...view, ...patch };
@@ -124,8 +113,8 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
     const transition = checkinReducer(state, event);
     state = transition.state;
     if (event.type === 'buttonAnswer') view = { ...view, buttonsFor: null };
-    // The repeat button cuts the current listen; the repeated prompt then listens again.
-    if (event.type === 'repeat' || (state.paused && !wasPaused)) {
+    // A repeat or a chip answer cuts the current listen; the next prompt then listens again.
+    if (event.type === 'repeat' || event.type === 'buttonAnswer' || (state.paused && !wasPaused)) {
       stopListening();
     } else {
       publish();
@@ -185,8 +174,10 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
   async function speak(key: string, params?: Record<string, string | number>): Promise<void> {
     if (key === '') return;
     const caption = captionFor(key, params);
-    publish({ caption });
+    spokenLines = [...spokenLines, { id: spokenLines.length + 1, text: caption, step: state.step }];
+    publish({ caption, speaking: true });
     await deps.synthesizer.speak(caption);
+    publish({ speaking: false });
     return dispatch({ type: 'spoken' });
   }
 
