@@ -16,12 +16,16 @@ export interface SensorCalloutProps {
  * A sensor dot with its leader and status label, for one body anchor point. The caller places this
  * element's top-left corner on the anchor (a 3D point in `BodyViewer`, a % position in
  * `BodyFallback`). The offset moves the dot's center onto that point, so the dot sits exactly on the
- * anchor; the leader and label then run outward on `labelSide` (the screen side away from the body centre).
+ * anchor; the leader and pill then run out on `placement` (`LABEL_PLACEMENT`).
  */
 export function SensorCallout({ dot, onSensorTap }: SensorCalloutProps) {
   const half = `${SENSOR_RING_PX * HALF}px`;
   const transform =
-    dot.labelSide === 'left' ? `translate(calc(-100% + ${half}), -50%)` : `translate(-${half}, -50%)`;
+    dot.placement === 'left'
+      ? `translate(calc(-100% + ${half}), -50%)`
+      : dot.placement === 'right'
+        ? `translate(-${half}, -50%)`
+        : `translate(-${half}, -${half})`;
 
   return (
     <div className="flex items-center" style={{ transform }}>
@@ -33,7 +37,7 @@ export function SensorCallout({ dot, onSensorTap }: SensorCalloutProps) {
         focused={dot.focused}
         measuring={dot.measuring}
         onSensorTap={onSensorTap}
-        labelSide={dot.labelSide}
+        placement={dot.placement}
       />
     </div>
   );

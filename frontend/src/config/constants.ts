@@ -1,4 +1,4 @@
-import type { Level, SensorKey } from '@base-vital/contracts';
+import type { BaselineIndicator, Indicator, Level, SensorKey } from '@base-vital/contracts';
 import { TOKENS } from './design-tokens';
 
 /**
@@ -59,6 +59,23 @@ export const FALLBACK_DOTS: Readonly<Record<SensorKey, { readonly x: number; rea
   oxygen: { x: 13.0, y: 42.3 },
 };
 
+/** Display scale of one metric range bar (docs/base-vital-home-data-mapping.md §1). */
+export interface UiScale {
+  readonly min: number;
+  readonly max: number;
+  /** Key into `src/config/messages.es.ts` for the unit shown next to the scale. */
+  readonly unitKey: string;
+}
+
+/** Range bar scales per body sensor. Values outside a scale are clamped by the layout. */
+export const UI_SCALES: Readonly<Record<SensorKey, UiScale>> = {
+  pressure: { min: 90, max: 160, unitKey: 'unit.pressure' },
+  pulse: { min: 40, max: 130, unitKey: 'unit.pulse' },
+  oxygen: { min: 85, max: 100, unitKey: 'unit.oxygen' },
+  temperature: { min: 35, max: 39, unitKey: 'unit.temperature' },
+  sleep: { min: 0, max: 10, unitKey: 'unit.sleep' },
+} satisfies Record<SensorKey, UiScale>;
+
 /** How long one voice listen waits for an answer before resolving null (ms). */
 export const LISTEN_TIMEOUT_MS = 8000;
 
@@ -68,6 +85,24 @@ export const SOON_TOOLTIP_MS = 2000;
 /** Big-button sleep options: first and last hour, and the step between two options (hours). */
 export const SLEEP_HOURS_MIN = 0;
 export const SLEEP_HOURS_STEP = 0.5;
+
+/** Observation indicator that carries each body sensor's number (range bar marker). */
+export const SENSOR_INDICATOR: Readonly<Record<SensorKey, Indicator>> = {
+  sleep: 'sleep_hours',
+  pulse: 'resting_heart_rate',
+  pressure: 'blood_pressure',
+  temperature: 'body_temperature',
+  oxygen: 'oxygen_saturation',
+} satisfies Record<SensorKey, Indicator>;
+
+/** Baseline indicator ("tu normal") that brackets each body sensor. Blood pressure uses the systolic baseline. */
+export const SENSOR_BASELINE: Readonly<Record<SensorKey, BaselineIndicator>> = {
+  sleep: 'sleep_hours',
+  pulse: 'resting_heart_rate',
+  pressure: 'systolic',
+  temperature: 'body_temperature',
+  oxygen: 'oxygen_saturation',
+} satisfies Record<SensorKey, BaselineIndicator>;
 
 /** Order of the metric rows in "Estado de Ana" (mockup order, not `SensorKey` order). */
 export const METRIC_ORDER: readonly SensorKey[] = ['pressure', 'pulse', 'oxygen', 'temperature', 'sleep'];
@@ -104,6 +139,9 @@ export const CHECKIN_PATH = '/checkin';
 /** How long a check-in save may take before it counts as failed (ms). */
 export const SAVE_TIMEOUT_MS = 5000;
 
+/** How long the startup seeding of the simulated history may take before the app renders anyway (ms). */
+export const SEED_TIMEOUT_MS = 5000;
+
 /** 3D body model (`public/models/body.glb`). Node names are fixed by contracts/body-glb.md. */
 export const BODY_MODEL_URL = '/models/body.glb';
 
@@ -120,7 +158,7 @@ export const BODY_POLAR_ANGLE_RAD = Math.PI / 2;
 export const BODY_CAMERA_FOV_DEG = 30;
 
 /** Space kept around the fitted body (1 = touching the frame edge). */
-export const BODY_FIT_MARGIN = 1.1;
+export const BODY_FIT_MARGIN = 1.35;
 
 /**
  * Z-index range of the body labels (drei `Html`, `zIndexRange`). The labels stay below the bottom
@@ -137,6 +175,22 @@ export const BODY_LEADER_PX = 16;
 /** Box of one body sensor dot in px (`TOKENS.size.sensorRing`). Its center is the dot center. */
 export const SENSOR_RING_PX = TOKENS.size.sensorRing;
 
+/**
+ * Where a sensor's status pill goes, relative to its dot. `right` and `left` put the pill beside the
+ * dot on the same line; `above-left` and `below-left` put it above or below and to the left, with a
+ * short vertical leader, so the pills of neighbouring dots do not collide on the body.
+ */
+export type LabelPlacement = 'right' | 'left' | 'above-left' | 'below-left';
+
+/** Pill placement per body sensor (T072b fix 2). Pressure sits above the arm, oxygen below the hand. */
+export const LABEL_PLACEMENT: Readonly<Record<SensorKey, LabelPlacement>> = {
+  sleep: 'right',
+  pulse: 'right',
+  temperature: 'right',
+  pressure: 'above-left',
+  oxygen: 'below-left',
+};
+
 /** Local body image shown when the 3D body cannot run (CL5, ui-build §3 #2). */
 export const BODY_FALLBACK_URL = '/models/body-fallback.png';
 
@@ -146,6 +200,7 @@ export const BODY_FALLBACK_SIZE = { width: 600, height: 900 } as const;
 /** How long the 3D body may take to load before the fallback image replaces it (ms). */
 export const BODY_LOAD_TIMEOUT_MS = 3000;
 
+<<<<<<< HEAD
 /** Paleta de colores para gráficos clínicos y dashboards. */
 export const CHART_COLORS = {
   grid: '#E2E8F0',
@@ -163,3 +218,25 @@ export const CHART_COLORS = {
   systolicLimit: '#D8B4FE',
 } as const;
 
+=======
+/** Milliseconds in one second. */
+export const MS_PER_SECOND = 1000;
+
+/**
+ * Performance targets of the dev metrics overlay (T095, plan.md "Performance Goals"). Times are ms;
+ * `fps` is the frame rate of the 3D canvas. Not health thresholds, so they live here, not in libs.
+ */
+export const DEV_TARGETS = {
+  /** Start tap to `saved`: one daily check-in (SC-001, CA1). */
+  checkinMs: 60_000,
+  /** Prompt end to microphone open (plan.md: voice start ≤ 300 ms after the prompt). */
+  voiceStartMs: 300,
+  /** End of speech (last partial) to the final transcript (plan.md: ≤ 800 ms). */
+  finalTranscriptMs: 800,
+  /** Lowest acceptable 3D frame rate (plan.md: ≥ 30 fps). */
+  fps: 30,
+} as const;
+
+/** Window over which the 3D frame-rate meter averages its frames (ms). */
+export const FPS_WINDOW_MS = 1000;
+>>>>>>> origin/main

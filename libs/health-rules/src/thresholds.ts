@@ -14,8 +14,8 @@ import type { RangeBand, Threshold } from '@base-vital/contracts';
  *   with no gaps and no overlaps between levels (except where a red band is gated, see below).
  * - `consecutiveForRed` gates a red band: the value is red only after that many consecutive
  *   readings or days (RN1, RN2). Until then the same value is amber.
- * - A red band below a bound that also needs a symptom (pulse < 50, RN1) is only meaningful
- *   together with the symptom list; the caller (`levels.ts`) checks it before using that band.
+ * - A red band marked `requiresSymptoms` (pulse < 50, RN1) is only red together with a symptom;
+ *   the caller (`levels.ts`) checks the flag before using that band.
  * - Blood pressure is split into two entries (`component` systolic and diastolic), each owning
  *   all three bands; the level of a reading is the worse of the two components.
  *
@@ -55,12 +55,13 @@ export const THRESHOLDS: readonly Threshold[] = [
     sourceStatus: 'cited',
   },
   // Team criterion: below 60 is amber (50–59 and, without symptoms, < 50; RN1: atención).
-  // Red below 50 only with a symptom (RN1); the symptom check is done by levels.ts.
+  // Red below 50 only with a symptom (RN1, `requiresSymptoms`); the symptom check is done by levels.ts.
   {
     indicator: 'resting_heart_rate',
     green: {},
     amber: { max: 60 },
     red: { max: 50 },
+    requiresSymptoms: true,
     sourceStatus: 'team_criterion',
   },
   // Team criterion: 101–110 amber; 111 and above red (i.e. above 110).

@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import type { DemoScenario } from '@base-vital/contracts';
+import type { DemoScenario, DemoScenarioId } from '@base-vital/contracts';
 import type {
   AgendaPort,
   CheckRepositoryPort,
@@ -10,6 +10,7 @@ import type {
   SpeechSynthesizerPort,
 } from '../application/ports';
 import type { CheckinRunner } from '../application/use-cases/runCheckin';
+import type { DevMetricsRecorder } from '../application/devMetrics';
 import type { StorageLike } from '../application/use-cases/selectDemoScenario';
 
 /** What the UI may use from the container (structural; ui must not import the composition root). */
@@ -26,6 +27,10 @@ export interface AppContainer {
   createCheckinRunner: () => CheckinRunner;
   /** Keeps the demo scenario id; undefined when the browser has no storage. */
   storage: StorageLike | undefined;
+  /** Scenario change: clears the store and writes the simulated history of scenario `id`. */
+  reseedHistory?: (id: DemoScenarioId) => Promise<void>;
+  /** Dev-only check-in timing (T095); absent in test containers that do not show the overlay. */
+  devMetrics?: DevMetricsRecorder;
 }
 
 const AppServicesContext = createContext<AppContainer | null>(null);

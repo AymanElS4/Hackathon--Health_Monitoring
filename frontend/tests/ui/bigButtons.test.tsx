@@ -128,8 +128,10 @@ describe('BigButtons', () => {
     }
     const sent = onAnswer.mock.calls.map(([text]) => text as string);
     expect(sent).toHaveLength(5);
-    expect(parseUtterance('symptoms', sent[0])).toEqual({ kind: 'symptoms', symptoms: ['dizziness'] });
-    expect(parseUtterance('symptoms', sent[2])).toEqual({ kind: 'symptoms', symptoms: ['chest_pain'] });
-    expect(parseUtterance('symptoms', sent[4])).toEqual({ kind: 'symptoms', symptoms: ['none'] });
+    // Order of the chips: Ninguno · Mareo · Desmayo · Dolor de pecho · Falta de aire (T080a).
+    expect(parseUtterance('symptoms', sent[0])).toEqual({ kind: 'symptoms', symptoms: ['none'] });
+    expect(parseUtterance('symptoms', sent[1])).toEqual({ kind: 'symptoms', symptoms: ['dizziness'] });
+    expect(parseUtterance('symptoms', sent[3])).toEqual({ kind: 'symptoms', symptoms: ['chest_pain'] });
+    expect(parseUtterance('symptoms', sent[4])).toEqual({ kind: 'symptoms', symptoms: ['shortness_of_breath'] });
   });
 });

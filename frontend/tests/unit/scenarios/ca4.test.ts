@@ -17,11 +17,12 @@
  *   }
  *
  * It maps `state.confirmedVoice` to confirmed voice Observations, `state.confirmed` to the
- * device Observations, `state.symptoms` to symptoms, and passes `history: []` to `evaluateCheck`.
+ * device Observations, `state.symptoms` to symptoms, and passes the `history` it is given to `evaluateCheck`.
  * The runner's `evaluate` hook receives the reducer state and returns the full result; the
  * reducer only reads `verdict` and `actionKey` from it.
  *
- * The prior nights are not used here: no history is passed until T088 seeds it.
+ * The 14 days before today are the seeded simulated history (T088, prior nights 7.1 and 7.4 h): the
+ * repository holds them, the runner passes them to `evaluate` (newest first) and the baseline is active.
  */
 import { describe, it, expect } from 'vitest';
 import { createCheckinRunner } from '../../../src/application/use-cases/runCheckin';
@@ -35,6 +36,7 @@ import { FixedClock } from '../../../src/adapters/fakes/FixedClock';
 import { MemoryCheckRepository } from '../../../src/adapters/fakes/MemoryCheckRepository';
 import { SimulatedDevices } from '../../../src/adapters/simulated-devices/SimulatedDevices';
 import { StaticAgenda } from '../../../src/adapters/static-agenda/StaticAgenda';
+import { seedIfEmpty } from '../../../src/application/use-cases/seedHistory';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -49,16 +51,22 @@ describe('CA4 / SC-011: sleep 5 h with the rest green gives attention', () => {
     const clock = new FixedClock(new Date(2026, 10, 15, 9, 30));
     const devices = new SimulatedDevices(DEMO_SCENARIOS.ca4, { clock: () => clock.now() });
 
+    // The 14 seeded days before today (T088) are the history of the check-in.
+    const repository = new MemoryCheckRepository();
+    await seedIfEmpty(repository, DEMO_SCENARIOS.ca4, { now: clock.now() });
+
     let evaluated: ReturnType<typeof evaluateFromState> | null = null;
+    let historyDays = -1;
     const runner = createCheckinRunner({
       recognizer: voice,
       synthesizer: voice,
       devices,
       agenda: new StaticAgenda(DEMO_AGENDA),
       clock,
-      repository: new MemoryCheckRepository(),
-      evaluate: (state) => {
-        evaluated = evaluateFromState(state, { at: clock.now().toISOString() });
+      repository,
+      evaluate: (state, history) => {
+        historyDays = history.length;
+        evaluated = evaluateFromState(state, { at: clock.now().toISOString(), history });
         return evaluated;
       },
       script: checkinScripts.daily,
@@ -77,6 +85,8 @@ describe('CA4 / SC-011: sleep 5 h with the rest green gives attention', () => {
 
     expect(evaluated).not.toBeNull();
     const result = evaluated!;
+    // The runner passed the 14 seeded days (baseline active: "tu normal" needs 14).
+    expect(historyDays).toBe(14);
 
     // Verdict and action (RN5 / SC-011).
     expect(result.verdict).toBe('attention');

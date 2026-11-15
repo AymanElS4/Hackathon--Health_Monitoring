@@ -113,13 +113,37 @@ describe('StatusHeader trailing slot', () => {
     );
 
     const link = screen.getByRole('link', { name: messages['home.history'] });
-    expect(link.parentElement).toHaveClass('ml-auto');
+    expect(link.parentElement).toHaveClass('whitespace-nowrap');
     expect(screen.getByText(t('status.noCheck'))).toBeInTheDocument();
   });
 
   it('renders no trailing wrapper when no trailing element is given', () => {
     const { container } = render(<StatusHeader crewName="Ana" verdict="none" mood={null} />);
 
-    expect(container.querySelector('.ml-auto')).toBeNull();
+    const row = container.querySelector('h2')?.parentElement;
+    expect(row?.children).toHaveLength(1);
+  });
+});
+
+describe('MetricRow badge names the indicator that set the level', () => {
+  it('shows "Ánimo: atención" on the sleep row when the reason is mood', () => {
+    const { container } = render(<MetricRow sensor="sleep" value="7 h" level="amber" reason="mood" teamCriterion />);
+
+    expect(container.textContent).toContain(
+      `${t('metric.reasonBadge', { reason: t('indicator.mood'), level: t('level.amber') })}${t('team.criterion.mark')}`,
+    );
+    expect(screen.queryByText(t('status.verdict.attention'))).toBeNull();
+  });
+
+  it('keeps the verdict word when the reason is the row\'s own indicator', () => {
+    render(<MetricRow sensor="sleep" value="5 h" level="amber" reason="sleep_hours" />);
+
+    expect(screen.getByText(t('status.verdict.attention'))).toBeInTheDocument();
+  });
+
+  it('keeps the verdict word when there is no reason', () => {
+    render(<MetricRow sensor="pulse" value="72 lpm" level="green" reason={null} />);
+
+    expect(screen.getByText(t('status.verdict.ok'))).toBeInTheDocument();
   });
 });

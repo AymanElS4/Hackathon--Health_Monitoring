@@ -54,8 +54,8 @@ describe('StatusHeader with a check today', () => {
 
   it.each([
     ['ok', 'Hoy: Bien', 'text-level-green', 'bg-level-green-bg'],
-    ['attention', 'Hoy: Atención', 'text-level-amber', null],
-    ['alert', 'Hoy: Alerta', 'text-level-red', null],
+    ['attention', 'Hoy: Atención', 'text-ink', null],
+    ['alert', 'Hoy: Alerta', 'text-ink', null],
   ] as const)(
     'styles the verdict chip for %s with the Badge level classes',
     (verdict, label, textClass, bgClass) => {

@@ -8,7 +8,7 @@ import { SensorKey } from '@base-vital/contracts';
 import {
   bodyDotModels,
   cameraDistanceToFit,
-  labelSideOf,
+  placementOf,
   sensorNodeName,
   type BodyReading,
 } from '../../src/ui/body3d/bodyViewerModel';
@@ -87,21 +87,21 @@ describe('bodyDotModels', () => {
   });
 });
 
-describe('labelSideOf', () => {
-  it('puts the pressure and oxygen labels on the left (the body is on the right of the screen)', () => {
-    expect(labelSideOf('pressure')).toBe('left');
-    expect(labelSideOf('oxygen')).toBe('left');
+describe('placementOf (T072b fix 2)', () => {
+  it('puts the pressure pill above-left and the oxygen pill below-left, so they do not collide', () => {
+    expect(placementOf('pressure')).toBe('above-left');
+    expect(placementOf('oxygen')).toBe('below-left');
   });
 
-  it('puts the sleep, pulse and temperature labels on the right', () => {
-    expect(labelSideOf('sleep')).toBe('right');
-    expect(labelSideOf('pulse')).toBe('right');
-    expect(labelSideOf('temperature')).toBe('right');
+  it('puts the sleep, pulse and temperature pills beside their dot on the right', () => {
+    expect(placementOf('sleep')).toBe('right');
+    expect(placementOf('pulse')).toBe('right');
+    expect(placementOf('temperature')).toBe('right');
   });
 
   it('is carried into every dot model', () => {
     for (const model of bodyDotModels([], null, false, true)) {
-      expect(model.labelSide).toBe(labelSideOf(model.sensor));
+      expect(model.placement).toBe(placementOf(model.sensor));
     }
   });
 });

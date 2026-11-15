@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Level, Verdict } from '@base-vital/contracts';
 import { t } from '../../config/messages.es';
 import { Badge } from './Badge';
@@ -11,6 +12,8 @@ export interface VerdictPanelProps {
   actionParams?: Record<string, string>;
   /** Next activity of the day; `null` when the day has no more. */
   next: { title: string; time: string } | null;
+  /** Optional summary under the next activity, e.g. the metric rows of the check (T091). */
+  summary?: ReactNode;
 }
 
 /** Badge level of each verdict (RN6: the label says whether it is fine). */
@@ -24,7 +27,7 @@ const VERDICT_LEVEL: Record<Verdict, Level> = {
  * Verdict label, one action and the next activity (RF9, RF10). The team-criterion note is not drawn
  * here: the screen renders it once for all marks (`needsTeamNote`, Principle VIII).
  */
-export function VerdictPanel({ verdict, actionKey, actionParams = {}, next }: VerdictPanelProps) {
+export function VerdictPanel({ verdict, actionKey, actionParams = {}, next, summary }: VerdictPanelProps) {
   return (
     <Card>
       <div className="flex flex-col gap-md">
@@ -39,6 +42,7 @@ export function VerdictPanel({ verdict, actionKey, actionParams = {}, next }: Ve
             ? t('next.none')
             : t('next', { title: next.title, time: next.time })}
         </p>
+        {summary}
       </div>
     </Card>
   );

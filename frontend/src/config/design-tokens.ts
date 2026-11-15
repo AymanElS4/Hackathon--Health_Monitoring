@@ -80,5 +80,19 @@ export const TOKENS = {
     levelMarker: 8,
     /** Minimum height of the body area (3D body or fallback image) in the "Cómo estás" card, px. The area grows to fill the card. */
     bodyArea: 360,
+    /** Height of the zone bar of a metric range bar, px. */
+    rangeBar: 8,
+    /** Marker dot on a metric range bar, px. */
+    rangeMarker: 10,
+    /** White outline of the range marker dot, px. */
+    rangeMarkerOutline: 2,
+    /** "Tu normal" band under a metric range bar, px. */
+    rangeBaseline: 4,
+    /** Pointer of the value bubble (a rotated square), px. */
+    rangePointer: 6,
+    /** Row above a range bar for the small value bubble, px (13 px text; no extra line in the row). */
+    rangeBubbleRow: 16,
+    /** Row of cut-point labels under a range bar, px. */
+    rangeCutRow: 16,
   },
 } as const;

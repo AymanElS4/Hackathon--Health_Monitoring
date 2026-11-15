@@ -433,6 +433,7 @@ describe('RN1 low-temperature re-read', () => {
 
     expect(result.state.step).toBe('measuring');
     expect(result.effects).toEqual([
+      { type: 'speak', key: 'measure.temperature.again' },
       { type: 'setFocus', sensor: 'temperature' },
       { type: 'readDevices', indicators: ['body_temperature'] },
     ]);

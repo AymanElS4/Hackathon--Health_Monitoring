@@ -24,6 +24,7 @@ import { checkinScripts } from '../../src/config/checkinScripts';
 import { DEMO_SCENARIOS } from '../../src/config/demoScenarios';
 import { LISTEN_TIMEOUT_MS } from '../../src/config/constants';
 import { messages, t } from '../../src/config/messages.es';
+import { METRIC_ORDER } from '../../src/config/constants';
 
 /** Local 09:20 on the demo day: the agenda's next item is "Chequeo diario" at 09:30. */
 const DEMO_NOW = new Date(2026, 10, 15, 9, 20);
@@ -194,8 +195,8 @@ describe('Check-in screen', () => {
   });
 
   it.each([
-    { answer: 'siete y media', caption: 'Escuché 7,5 horas. ¿Correcto?' },
-    { answer: 'una', caption: 'Escuché 1 hora. ¿Correcto?' },
+    { answer: 'siete y media', caption: 'Escuché que dormiste 7,5 horas. ¿Es correcto?' },
+    { answer: 'una', caption: 'Escuché que dormiste 1 hora. ¿Es correcto?' },
   ])('reads "$answer" back in Spanish as "$caption"', async ({ answer: spoken, caption }) => {
     const voice = new FakeVoice({ mode: 'manual' });
     renderCheckIn(buildContainer(voice));
@@ -398,7 +399,7 @@ describe('Check-in big buttons (T060)', () => {
     });
 
     expect(screen.getByText(t('confirm.sleep', { hours: 7 }))).toBeInTheDocument();
-    expect(screen.getByText('Escuché 7 horas. ¿Correcto?')).toBeInTheDocument();
+    expect(screen.getByText('Escuché que dormiste 7 horas. ¿Es correcto?')).toBeInTheDocument();
     expect(screen.queryByText(t('checkin.buttonsHint'))).not.toBeInTheDocument();
   });
 });
@@ -442,7 +443,8 @@ describe('Check-in body and team note', () => {
     renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
 
     await finishCheckin();
-    expect(document.querySelectorAll('[data-level]')).toHaveLength(5);
+    // Range-bar zones carry data-level too; only the five body dots are counted here.
+    expect(document.querySelectorAll('[data-sensor][data-level]')).toHaveLength(5);
   });
 
   it('CA3: the sleep dot is focused while Vita asks about sleep', async () => {
@@ -478,3 +480,53 @@ describe('Check-in body and team note', () => {
   });
 });
 
+
+describe('Check-in summary rows (T091)', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('shows no metric rows while the check is still running', async () => {
+    renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
+
+    await screen.findByText(t('ask.sleep'));
+    expect(document.querySelectorAll('li[data-highlighted]')).toHaveLength(0);
+  });
+
+  it('after the verdict, the five metric rows sit inside the verdict message, under its action', async () => {
+    renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
+
+    await finishCheckin();
+    const rows = document.querySelectorAll<HTMLElement>('li[data-highlighted]');
+    expect(rows).toHaveLength(METRIC_ORDER.length);
+    const action = screen.getByText(t('action.slept_little'));
+    const verdictCard = rows[0].closest<HTMLElement>('.rounded-card');
+    expect(verdictCard).not.toBeNull();
+    expect(verdictCard?.contains(action)).toBe(true);
+  });
+
+  it('opens the log at the verdict start, so the verdict title stays visible (not the end)', async () => {
+    const calls: Array<{ element: Element; block: unknown }> = [];
+    Element.prototype.scrollIntoView = function (this: Element, options?: ScrollIntoViewOptions) {
+      calls.push({ element: this, block: options?.block });
+    };
+    renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
+
+    await finishCheckin();
+    const verdictAnchors = calls.filter((call) => call.block === 'start');
+    expect(verdictAnchors).toHaveLength(1);
+    expect(verdictAnchors[0].element.textContent).toContain(t('action.slept_little'));
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  it('the sleep row carries its range bar with the marker of the answered 7 h', async () => {
+    renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
+
+    await finishCheckin();
+    const sleepRow = Array.from(document.querySelectorAll<HTMLElement>('li[data-highlighted]')).find((row) =>
+      row.textContent?.includes(t('sensor.sleep')),
+    );
+    expect(sleepRow?.querySelector('[data-testid="range-marker"]')).not.toBeNull();
+    expect(sleepRow?.querySelector('[data-testid="range-bubble"]')).toHaveTextContent(t('value.sleep_hours', { value: 7 }));
+  });
+});

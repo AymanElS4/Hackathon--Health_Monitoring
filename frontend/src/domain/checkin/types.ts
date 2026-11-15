@@ -42,7 +42,11 @@ export type CheckinEvent =
   | { type: 'start' }
   | { type: 'transcript'; text: string | null }
   | { type: 'spoken' }
-  | { type: 'devicesRead'; observations: Observation[] }
+  /**
+   * Device observations of one stage. `pulseOutsideNormal` is sent with the pulse read only (CL4,
+   * D33): true when the pulse is outside "tu normal" (RN3). Absent on the other reads.
+   */
+  | { type: 'devicesRead'; observations: Observation[]; pulseOutsideNormal?: boolean }
   | { type: 'evaluated'; result: { verdict: Verdict; actionKey: string } }
   | { type: 'saved' }
   | { type: 'pause' }

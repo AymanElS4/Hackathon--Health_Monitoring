@@ -12,6 +12,13 @@ interface SpeechRecognizerPort {
   stop(): void;
   /** Loads the model once; idempotent. Called when Home opens. */
   preload(): Promise<void>;
+  /**
+   * Opens the microphone and audio graph ahead of the first `listen` (called when a check-in starts).
+   * Never rejects; a failure surfaces later as a `listen` that resolves null.
+   */
+  prepare(): Promise<void>;
+  /** Frees the microphone and audio graph kept between listens; a later `listen` reopens them. */
+  release(): void;
 }
 
 interface SpeechSynthesizerPort {
