@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Indicator } from '../shared/contracts';
 
 // Shared numeric and path constants for the surgeon sync service.
 
@@ -15,10 +16,10 @@ export const DB_PROBE_TIMEOUT_MS = 2000;
 /** Maximum time the Postgres pool waits to establish a new connection. */
 export const DB_CONNECT_TIMEOUT_MS = 2000;
 
-/** Failed surgeon access attempts allowed inside the window before lockout. */
+/** Failed access-code attempts (sync or surgeon) allowed inside the window before lockout. */
 export const MAX_FAILED_ATTEMPTS = 10;
 
-/** Sliding window over which failed surgeon access attempts are counted. */
+/** Sliding window over which failed access-code attempts (sync or surgeon) are counted. */
 export const FAILED_ATTEMPTS_WINDOW_MS = 60_000;
 
 /** Number of past days included in the surgeon's crew history view. */
@@ -64,3 +65,16 @@ export const STARTUP_DB_ATTEMPTS = 30;
 
 /** Delay between startup database probe attempts. */
 export const STARTUP_DB_DELAY_MS = 1000;
+
+/** Display unit stored with each observation, per indicator (data-model "Domain mapping"). */
+export const INDICATOR_UNITS = {
+  sleep_hours: 'h',
+  mood: '1-5',
+  resting_heart_rate: 'lpm',
+  blood_pressure: 'mmHg',
+  body_temperature: '°C',
+  oxygen_saturation: '%',
+} as const satisfies Record<Indicator, string>;
+
+/** Milliseconds in one UTC day. */
+export const MS_PER_DAY = 86_400_000;
