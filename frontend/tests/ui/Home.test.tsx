@@ -30,6 +30,12 @@ describe('Home', () => {
       'href',
       '/checkin',
     );
+    const agendaLinks = screen.getAllByRole('link', { name: messages['home.nav.agenda'] });
+    expect(agendaLinks).toHaveLength(2);
+    agendaLinks.forEach((agendaLink) => {
+      expect(agendaLink).toHaveAttribute('href', '/agenda');
+      expect(agendaLink).not.toHaveAttribute('title', messages['home.comingSoon']);
+    });
   });
 
   it('highlights a metric row when its body sensor is selected', () => {

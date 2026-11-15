@@ -4,6 +4,7 @@ import { createContainer } from './composition-root';
 import { Home } from './ui/screens/Home';
 import { CheckIn } from './ui/screens/CheckIn';
 import { History } from './ui/screens/History';
+import { Agenda } from './ui/screens/Agenda';
 
 export function App() {
   const [container, setContainer] = useState(() => createContainer());
@@ -24,6 +25,7 @@ export function App() {
             />
           )}
         />
+        <Route path="/agenda" component={Agenda} />
         <Route path="/checkin" component={CheckIn} />
         <Route
           path="/historial"
