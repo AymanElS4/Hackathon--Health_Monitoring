@@ -1,6 +1,8 @@
 import { Moon, Wifi, WifiOff } from 'lucide-react';
 import type { HomeView } from '../../application/use-cases/buildHomeView';
 import { t } from '../../config/messages.es';
+import { useLocale } from '../useLocale';
+import { LanguageToggle } from './LanguageToggle';
 
 export interface HomeHeaderProps {
   header: HomeView['header'];
@@ -8,6 +10,7 @@ export interface HomeHeaderProps {
 
 /** One-line header: crew avatar and greeting on the left; mission day and connectivity chips on the right. */
 export function HomeHeader({ header }: HomeHeaderProps) {
+  useLocale();
   const online = header.connectivity === 'online';
   const ConnectivityIcon = online ? Wifi : WifiOff;
   const phase = header.lightPhase;
@@ -15,7 +18,7 @@ export function HomeHeader({ header }: HomeHeaderProps) {
 
   return (
     <header className="bg-card shadow-ambient">
-      <div className="mx-auto flex max-w-content items-center gap-md px-page py-md">
+      <div className="mx-auto flex max-w-content flex-wrap items-center gap-md px-page py-md md:flex-nowrap">
         <img
           src={header.avatarUrl}
           alt={t('home.avatarAlt')}
@@ -39,6 +42,7 @@ export function HomeHeader({ header }: HomeHeaderProps) {
           <ConnectivityIcon aria-hidden="true" className="h-lg w-lg text-primary" />
           <span>{online ? t('connectivity.online') : t('connectivity.offline')}</span>
         </p>
+        <LanguageToggle />
       </div>
     </header>
   );

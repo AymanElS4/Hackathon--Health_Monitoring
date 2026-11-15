@@ -1,5 +1,7 @@
 // Global test setup: registers jest-dom matchers (toBeInTheDocument, etc.) with Vitest.
 import '@testing-library/jest-dom/vitest';
+import { beforeEach } from 'vitest';
+import { setLocale } from '../src/config/i18n';
 
 const storageValues = new Map<string, string>();
 const storage: Storage = {
@@ -26,4 +28,9 @@ const storage: Storage = {
 Object.defineProperty(window, 'localStorage', {
   configurable: true,
   value: storage,
+});
+
+// Existing assertions are Spanish; the product default is English.
+beforeEach(() => {
+  setLocale('es');
 });

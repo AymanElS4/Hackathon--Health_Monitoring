@@ -5,7 +5,7 @@
  */
 import type { SensorKey } from '@base-vital/contracts';
 import { LISTEN_TIMEOUT_MS, SAVE_TIMEOUT_MS } from '../../config/constants';
-import { t } from '../../config/messages.es';
+import { t, tVoice } from '../../config/messages.es';
 import { checkinReducer, createCheckinState } from '../../domain/checkin/checkinReducer';
 import type { CheckinEvent, CheckinScript, Effect, StepId } from '../../domain/checkin/types';
 import type {
@@ -166,22 +166,27 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
     }
   }
 
-  /** Caption of a line key. `next` names the next activity, or says there is none. */
-  function captionFor(key: string, params?: Record<string, string | number>): string {
-    if (key === 'confirm.sleep' && params?.hours === 1) return t('confirm.sleep.one');
+  /** Text of a line key through `translate`: `t` for the caption, `tVoice` for the spoken line. */
+  function lineFor(
+    translate: typeof t,
+    key: string,
+    params?: Record<string, string | number>,
+  ): string {
+    if (key === 'confirm.sleep' && params?.hours === 1) return translate('confirm.sleep.one');
     // Action keys take their params from the evaluation (e.g. the missing sensor's name).
-    if (key !== 'next') return t(key, key.startsWith('action.') ? evaluation.outcome.actionParams : params);
+    if (key !== 'next') return translate(key, key.startsWith('action.') ? evaluation.outcome.actionParams : params);
     const item = nextItemAt(deps.agenda, deps.clock.now());
-    if (item === null) return t('next.none');
-    return t('next', { title: item.title, time: item.time });
+    if (item === null) return translate('next.none');
+    return translate('next', { title: item.title, time: item.time });
   }
 
   async function speak(key: string, params?: Record<string, string | number>): Promise<void> {
     if (key === '') return;
-    const caption = captionFor(key, params);
+    const caption = lineFor(t, key, params);
+    const spoken = lineFor(tVoice, key, params);
     spokenLines = [...spokenLines, { id: spokenLines.length + 1, text: caption, step: state.step }];
     publish({ caption, speaking: true });
-    await deps.synthesizer.speak(caption);
+    await deps.synthesizer.speak(spoken);
     publish({ speaking: false });
     return dispatch({ type: 'spoken' });
   }

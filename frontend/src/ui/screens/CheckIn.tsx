@@ -273,7 +273,7 @@ export function CheckIn() {
           {showTeamNote && <p className="text-meta text-ink-secondary">{t('team.criterion.note')}</p>}
         </section>
         {/* The body follows the script: the sensor being discussed is highlighted (CA3). Its dots are not tappable here. */}
-        <div className="flex w-full flex-col items-center justify-center gap-md lg:w-2/5">
+        <div className="flex w-full flex-col items-center justify-center gap-md lg:w-2/5 [&>div:first-child]:min-h-[240px] lg:[&>div:first-child]:min-h-bodyArea">
           <LazyBodyViewer
             readings={bodyView.readings}
             focus={bodyView.focus}

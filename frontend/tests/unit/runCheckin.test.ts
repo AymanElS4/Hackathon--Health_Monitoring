@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { createCheckinRunner } from '../../src/application/use-cases/runCheckin';
 import type { CheckinOutcome } from '../../src/domain/checkin/checkinReducer';
 import { checkinScripts } from '../../src/config/checkinScripts';
-import { t } from '../../src/config/messages.es';
+import { t, tVoice } from '../../src/config/messages.es';
+import { setLocale } from '../../src/config/i18n';
 import { FakeVoice } from '../../src/adapters/fakes/FakeVoice';
 import { FakeDevices } from '../../src/adapters/fakes/FakeDevices';
 import { FixedClock } from '../../src/adapters/fakes/FixedClock';
@@ -289,5 +290,16 @@ describe('createCheckinRunner', () => {
       expect(listen.mock.calls.length).toBe(listensAtSaved);
       expect(runner.getSnapshot().listening).toBe(false);
     });
+  });
+
+  it('speaks Spanish while captions follow the UI locale', async () => {
+    setLocale('en');
+    const { voice, runner } = setup();
+    const done = runner.start();
+    await until(() => voice.spoken.length > 0);
+    expect(voice.spoken[0]).toBe(tVoice('greet'));
+    expect(voice.spoken[0]).toBe('Buenos días, Ana. Chequeo diario.');
+    expect(runner.getSnapshot().caption).toBe(t('greet'));
+    void done;
   });
 });

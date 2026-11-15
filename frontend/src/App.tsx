@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocale } from './ui/useLocale';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import { createContainer } from './composition-root';
 import { AppServicesProvider } from './ui/AppServices';
@@ -10,6 +11,7 @@ import { AGENDA_PATH, CHECKIN_PATH, HISTORY_PATH, HOME_PATH } from './config/con
 
 /** App shell: React Router v5 routes for the four screens. */
 export function App() {
+  const locale = useLocale();
   const [services] = useState(() => createContainer());
   // Screens read the store on mount, so the simulated history is written before they render. The
   // container bounds the wait (SEED_TIMEOUT_MS), so a failed or slow seed still lets the app render.
@@ -29,7 +31,7 @@ export function App() {
   if (!seeded) return null;
   return (
     <AppServicesProvider services={services}>
-      <BrowserRouter>
+      <BrowserRouter key={locale}>
         <Switch>
           <Route exact path={HOME_PATH} component={Home} />
           <Route exact path={AGENDA_PATH} component={Agenda} />

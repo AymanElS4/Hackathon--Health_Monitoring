@@ -104,12 +104,12 @@ export function Home() {
     <main className="min-h-screen bg-canvas">
       <HomeHeader header={view.header} />
       <div className="mx-auto flex max-w-content flex-col gap-xl px-page pb-dockClearance pt-lg">
-        <div className="grid grid-cols-12 items-stretch gap-xl">
-          <div className="col-span-4 flex flex-col gap-xl">
+        <div className="grid grid-cols-1 items-stretch gap-xl md:grid-cols-12">
+          <div className="contents md:col-span-4 md:flex md:flex-col md:gap-xl [&>:first-child]:order-1 [&>:last-child]:order-3 md:[&>*]:order-none">
             {view.now !== null && <NowCard now={view.now} onStart={startCheckin} />}
             <NextList next={view.next} pendingToday={view.pendingToday} />
           </div>
-          <section className="col-span-8 flex flex-col">
+          <section className="order-2 flex flex-col md:order-none md:col-span-8">
             <Card className="flex flex-1 flex-col gap-sm">
               <CardHeader
                 label={t('home.howAreYou')}
@@ -120,8 +120,8 @@ export function Home() {
                   </Link>
                 }
               />
-              <div className="flex flex-1 gap-md">
-                <div className="flex w-2/5 flex-col items-center gap-sm">
+              <div className="flex flex-1 flex-col gap-md md:flex-row">
+                <div className="flex w-full flex-col md:w-2/5 items-center gap-sm">
                   <LazyBodyViewer
                     readings={view.status.readings}
                     focus={selectedSensor}
@@ -130,7 +130,7 @@ export function Home() {
                   />
                   <p className="text-meta text-ink-secondary">{t('body.tapSensor')}</p>
                 </div>
-                <div className="flex w-3/5 flex-col gap-sm rounded-card bg-canvas p-sm">
+                <div className="flex w-full flex-col md:w-3/5 gap-sm rounded-card bg-canvas p-sm">
                   <StatusHeader
                     crewName={view.header.crewName}
                     verdict={view.status.verdict}

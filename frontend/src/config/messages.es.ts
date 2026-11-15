@@ -4,6 +4,9 @@
  * Verdict and action texts describe the reading and one everyday action; they
  * never name a diagnosis or a medication (principle VI).
  */
+import { getLocale } from './i18n';
+import { MESSAGES_EN } from './messages.en';
+
 export const messages: Record<string, string> = {
   // Check-in script (contracts/checkin-script.md)
   greet: 'Buenos días, Ana. Chequeo diario.',
@@ -27,6 +30,8 @@ export const messages: Record<string, string> = {
   'answer.sleep.one': '1 hora',
   'answer.mood': '{mood} de 5',
   'chat.partial': '{text}…',
+
+  'language.toggle': 'Cambiar idioma de la pantalla (la voz sigue en español)',
 
   // Verdict headlines (RN5)
   'verdict.ok': 'Estás bien',
@@ -288,12 +293,22 @@ export function formatNumber(value: number): string {
  * Numeric params use `formatNumber`. Placeholders without a matching param are left as they are.
  * Unknown keys return the key.
  */
-export function t(key: string, params?: Record<string, string | number>): string {
-  const template = messages[key] ?? key;
+function fill(template: string, params?: Record<string, string | number>): string {
   if (!params) return template;
   return template.replace(/\{(\w+)\}/g, (match, name: string) => {
     if (!Object.prototype.hasOwnProperty.call(params, name)) return match;
     const value = params[name];
     return typeof value === 'number' ? formatNumber(value) : value;
   });
+}
+
+/** On-screen text in the current locale (es or en); falls back to Spanish, then to the key. */
+export function t(key: string, params?: Record<string, string | number>): string {
+  const catalog: Record<string, string> = getLocale() === 'en' ? MESSAGES_EN : messages;
+  return fill(catalog[key] ?? messages[key] ?? key, params);
+}
+
+/** Text that is SPOKEN by Vita: always Spanish, whatever the UI locale. */
+export function tVoice(key: string, params?: Record<string, string | number>): string {
+  return fill(messages[key] ?? key, params);
 }
