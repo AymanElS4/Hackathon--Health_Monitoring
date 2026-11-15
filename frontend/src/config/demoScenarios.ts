@@ -5,15 +5,13 @@ import { DemoScenario, DemoScenarioId } from '@base-vital/contracts';
 
 /** Devices and history shared by every scenario except where noted. */
 const NORMAL_DEVICES = {
-  // nominal value; the simulated oximeter replays WESAD minutes in 60–100 bpm when
-  // data/wesad-hr.json is available (T022)
-  resting_heart_rate: 68,
+  resting_heart_rate: 64,
   blood_pressure: { systolic: 112, diastolic: 72 },
-  body_temperature: 36.7,
+  body_temperature: 36.6,
   oxygen_saturation: 98,
 } as const;
 
-const NORMAL_NIGHTS = [7.5, 7.0];
+const NORMAL_NIGHTS = [7.2, 7.8];
 
 export const DEMO_SCENARIOS: Record<DemoScenarioId, DemoScenario> = {
   normal: {
@@ -24,28 +22,37 @@ export const DEMO_SCENARIOS: Record<DemoScenarioId, DemoScenario> = {
   },
   ca4: {
     id: 'ca4',
-    devices: { ...NORMAL_DEVICES, blood_pressure: { ...NORMAL_DEVICES.blood_pressure } },
-    priorNights: [...NORMAL_NIGHTS],
+    devices: {
+      ...NORMAL_DEVICES,
+      resting_heart_rate: 72,
+      blood_pressure: { systolic: 118, diastolic: 76 },
+      body_temperature: 36.8,
+    },
+    priorNights: [7.1, 7.4],
     voice: 'real',
   },
   missing_sensor: {
     id: 'missing_sensor',
     devices: {
       ...NORMAL_DEVICES,
-      blood_pressure: { ...NORMAL_DEVICES.blood_pressure },
-      oxygen_saturation: null,
+      resting_heart_rate: 66,
+      blood_pressure: null,
+      body_temperature: 36.7,
+      oxygen_saturation: 97,
     },
-    priorNights: [...NORMAL_NIGHTS],
+    priorNights: [7.0, 7.6],
     voice: 'real',
   },
   low_temp: {
     id: 'low_temp',
     devices: {
       ...NORMAL_DEVICES,
-      blood_pressure: { ...NORMAL_DEVICES.blood_pressure },
+      resting_heart_rate: 66,
+      blood_pressure: { systolic: 114, diastolic: 74 },
+      oxygen_saturation: 97,
       body_temperature: 35.6,
     },
-    priorNights: [...NORMAL_NIGHTS],
+    priorNights: [7.1, 7.5],
     voice: 'real',
   },
   voice_not_understood: {

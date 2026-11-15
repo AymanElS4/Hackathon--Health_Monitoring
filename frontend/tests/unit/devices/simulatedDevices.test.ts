@@ -26,7 +26,7 @@ describe('SimulatedDevices', () => {
 
     expect(hr).toEqual({
       indicator: 'resting_heart_rate',
-      value: 68,
+      value: 64,
       source: 'device',
       confirmed: true,
       simulated: true,
@@ -34,7 +34,7 @@ describe('SimulatedDevices', () => {
     });
     expect(bp?.value).toEqual({ systolic: 112, diastolic: 72 });
     expect(bp?.indicator).toBe('blood_pressure');
-    expect(temp?.value).toBe(36.7);
+    expect(temp?.value).toBe(36.6);
     expect(spo2?.value).toBe(98);
 
     for (const obs of [hr, bp, temp, spo2]) {
@@ -47,11 +47,11 @@ describe('SimulatedDevices', () => {
     }
   });
 
-  it('returns null for SpO2 in the missing_sensor scenario', async () => {
+  it('returns null for blood pressure in the missing_sensor scenario', async () => {
     const devices = new SimulatedDevices(DEMO_SCENARIOS.missing_sensor, { clock });
 
-    expect(await devices.read('oxygen_saturation')).toBeNull();
-    expect(await devices.read('blood_pressure')).not.toBeNull();
+    expect(await devices.read('blood_pressure')).toBeNull();
+    expect(await devices.read('oxygen_saturation')).not.toBeNull();
   });
 
   it('returns null for implausible values', async () => {

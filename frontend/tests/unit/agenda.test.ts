@@ -12,16 +12,16 @@ describe('StaticAgenda', () => {
 
   it('returns the first item when now is before it', () => {
     expect(agenda.next(at(6, 0))).toEqual(DEMO_AGENDA[0]);
-    expect(agenda.next(at(0, 0))).toEqual({ time: '07:30', titleKey: 'agenda.daily_check' });
+    expect(agenda.next(at(0, 0))).toEqual({ time: '08:00', titleKey: 'agenda.breakfast' });
   });
 
   it('returns the next item between two items', () => {
-    expect(agenda.next(at(9, 0))).toEqual({ time: '10:00', titleKey: 'agenda.maintenance' });
+    expect(agenda.next(at(9, 0))).toEqual({ time: '09:30', titleKey: 'agenda.daily_check' });
   });
 
   it('returns the item strictly after the current minute', () => {
-    expect(agenda.next(at(7, 30))).toEqual({ time: '08:30', titleKey: 'agenda.breakfast' });
-    expect(agenda.next(at(7, 29))).toEqual({ time: '07:30', titleKey: 'agenda.daily_check' });
+    expect(agenda.next(at(7, 30))).toEqual({ time: '08:00', titleKey: 'agenda.breakfast' });
+    expect(agenda.next(at(7, 29))).toEqual({ time: '08:00', titleKey: 'agenda.breakfast' });
   });
 
   it('returns null after the last item', () => {
@@ -31,13 +31,13 @@ describe('StaticAgenda', () => {
 
   it('sorts unordered items before searching', () => {
     const shuffled = new StaticAgenda([DEMO_AGENDA[2], DEMO_AGENDA[0], DEMO_AGENDA[1]]);
-    expect(shuffled.next(at(8, 0))).toEqual({ time: '08:30', titleKey: 'agenda.breakfast' });
-    expect(shuffled.next(at(9, 0))).toEqual({ time: '10:00', titleKey: 'agenda.maintenance' });
+    expect(shuffled.next(at(8, 0))).toEqual({ time: '09:30', titleKey: 'agenda.daily_check' });
+    expect(shuffled.next(at(9, 0))).toEqual({ time: '09:30', titleKey: 'agenda.daily_check' });
   });
 
   it('demo agenda has a Chequeo diario item, no exit check, and valid items with messages', () => {
     const daily = DEMO_AGENDA.find((item) => item.titleKey === 'agenda.daily_check');
-    expect(daily?.time).toBe('07:30');
+    expect(daily?.time).toBe('09:30');
     for (const item of DEMO_AGENDA) {
       expect(AgendaItem.safeParse(item).success).toBe(true);
       expect(messages[item.titleKey], `missing message: ${item.titleKey}`).toBeTruthy();
