@@ -14,7 +14,7 @@ export function LanguageToggle() {
       type="button"
       aria-label={t('language.toggle')}
       onClick={() => setLocale(next)}
-      className="-my-xs inline-flex min-h-touch min-w-touch shrink-0 items-center justify-center gap-xs rounded-full bg-track px-md py-xs text-meta text-ink"
+      className="relative order-3 inline-flex h-8 shrink-0 items-center justify-center gap-xs rounded-full bg-track px-md py-0 text-meta text-ink before:absolute before:-inset-2 before:content-[''] md:-my-xs md:order-none md:h-auto md:min-h-touch md:min-w-touch md:py-xs md:before:hidden"
     >
       {LOCALES.map((code, index) => (
         <span key={code} className="inline-flex items-center gap-xs">
