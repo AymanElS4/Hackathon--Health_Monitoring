@@ -17,7 +17,8 @@ defined in `docs/base-vital-home-data-mapping.md`.
 
 Built as npm workspaces: `libs/contracts` (Zod, defined once), `libs/health-rules` (pure rules and
 thresholds) and `frontend/` (offline PWA: Vite + React 18, Vosk in a Web Worker, `speechSynthesis`,
-React Three Fiber). `backend/` is NOT part of this feature: it arrives with `004-resumen-cirujano`
+React Three Fiber). `backend/` exists only as an empty hexagonal skeleton (folders + one-line README,
+not a workspace); its code arrives with `004-resumen-cirujano`
 (constitution 1.2.0 allows a server only off the astronaut's critical path). Voice/3D design detail
 lives in `base-vital-voice-blender-integration-spec.md`; where it conflicts with the clarified spec,
 the spec wins (see [research.md §A](./research.md)).
@@ -68,7 +69,7 @@ Vosk model ~40 MB precached; smallest text 13 px; touch targets ≥ 48 px.
 | III. No Phantom Scope | Pass | Home components come from spec FR-014–FR-019. Excluded: camera/`face_fatigue`, exit check, gestures, auto-start, WESAD evaluation script, Salud/Agenda/Guía screens, backend/sync (004). |
 | IV. Verifiable by non-technical person | Pass | CA1–CA8, SC-009–SC-013 and edge cases as hand scenarios in quickstart.md, run from the visible "Escenario de demo" selector (FR-013), with no URLs or flags. |
 | V. Respectful Data | Pass, with check | Only derived series from WESAD and Sleep-EDF; simulated values labelled; sources in `frontend/data/SOURCES.md`; avatar is a generic placeholder. |
-| VI. Never Diagnose | Pass, open item | Verdict/action texts restricted to readings + one everyday action. The mapping's "Vitamina D · dosis" agenda item needs a decision (see analyze). |
+| VI. Never Diagnose | Pass | Verdict/action texts restricted to readings + one everyday action. The 13:00 demo agenda item is "Experimento de biología · laboratorio" (no medication). |
 | VII. Offline by Default | Pass | PWA precache of app, fonts, icons (SVG in bundle), images, model, Vosk, data; local TTS voice or captions; Draco decoder bundled. |
 | VIII. Every Threshold Has a Source (v1.1.0) | Pass, with gate | Thresholds only in `libs/health-rules/src/thresholds.ts`, each with a verified source or declared team criterion; sources verified before that file is written. |
 | IX. Confirm Before Recording | Pass | Reducer requires `confirm` before a voice value becomes `confirmed`; repositories reject unconfirmed voice observations. |
@@ -98,6 +99,8 @@ specs/001-chequeo-diario-voz-cuerpo/
 
 ```text
 package.json                      # npm workspaces: libs/*, frontend (004 adds backend)
+backend/                          # empty skeleton: src/{domain,application/ports,application/use-cases,
+                                  #   adapters,config}/.gitkeep + README.md (feature 004)
 tsconfig.base.json
 .eslintrc.cjs                     # boundaries + max-lines + no-magic-numbers + jsx-no-literals
 
@@ -135,7 +138,8 @@ frontend/                         # @base-vital/frontend — astronaut app (offl
 └── tests/{unit,ui}
 ```
 
-**Structure Decision**: workspaces per `docs/base-vital-ui-build-spec.md` §1, minus `backend/` (004).
+**Structure Decision**: workspaces per `docs/base-vital-ui-build-spec.md` §1; `backend/` is an empty
+skeleton until 004.
 Code from Phases 1–2 currently at the repo root is moved by the restructure phase in tasks.md before
 any story work. Layer rules are enforced by `eslint-plugin-boundaries`: `frontend/src/domain` imports
 only `libs/*`; `application` imports `domain` and its own `ports`; `adapters` and `ui` depend inward

@@ -98,6 +98,11 @@ números.
   para `004-resumen-cirujano`.
 - Q: ¿Qué valores usa cada escenario de demo? → A: Los de la sección 4 del mapeo de datos; en
   "Sensor sin dato" falta la presión.
+- Q: ¿Qué actividad va a las 13:00 en la agenda de demo? → A: "Experimento de biología ·
+  laboratorio" (no "Vitamina D": la app no muestra ni recomienda medicamentos).
+- Q: ¿Qué fuente tienen los rangos de pulso fuera de 60–100 y la regla de sueño de 3 noches? → A: Se
+  declaran "criterio del equipo, no clínico". Un resultado que sale de esos rangos lleva la marca
+  "*" y la nota, como el ánimo.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -295,7 +300,8 @@ versión.
 
 - **RN1. Rangos (bien / atención / alerta):**
   - presión < 120/80 · 120–139 u 80–89 · ≥ 140 o ≥ 90 (AHA/ACC 2025).
-  - pulso en reposo 60–100 · 50–59 o 101–110 · < 50 con síntomas o > 110 (AHA).
+  - pulso en reposo 60–100 · 50–59 o 101–110 · < 50 con síntomas o > 110 (60–100: AHA; los rangos
+    50–59, 101–110, > 110 y < 50 con síntomas: criterio del equipo, no clínico).
     Síntomas que cuentan: mareo, desmayo, dolor de pecho o falta de aire, dichos por voz en la
     pregunta de síntomas. Pulso < 50 sin esos síntomas = atención.
   - temperatura 36,1–37,2 (normal: MedlinePlus) · 37,3–37,9 (entre el normal de MedlinePlus y la
@@ -305,7 +311,8 @@ versión.
     corrige el valor aquí.
   - oxígeno ≥ 95 % · 90–94 % · < 90 % (OMS, WHO Pulse Oximetry Training Manual; por verificar
     contra el documento original antes del demo).
-  - sueño ≥ 7 h · 6–6,9 h · < 6 h durante 3 noches seguidas (AASM/SRS).
+  - sueño ≥ 7 h · 6–6,9 h · < 6 h durante 3 noches seguidas (≥ 7 h: AASM/SRS; la regla de < 6 h
+    durante 3 noches seguidas: criterio del equipo, no clínico).
   - ánimo 4–5 · 3 · ≤ 2 durante 2 días seguidos (criterio del equipo, no clínico; la app lo
     declara).
   - Ejemplo: presión 128/76 → atención.

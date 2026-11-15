@@ -63,6 +63,7 @@ Static data in `libs/health-rules/src/thresholds.ts`.
 | `phase` | `SensorPhase` | |
 | `value` | `string` | Already formatted ("118/76", "5 h"). |
 | `outsideNormal` | `boolean` | > 2 SD for 3 readings in a row (RN3). |
+| `teamCriterion` | `boolean` | `true` when `level` was set by a team-criterion band (mood; pulse outside 60–100; sleep red by the 3-night rule); the UI then shows the "*" mark and note (Principle VIII). |
 | `reason` | `Indicator \| null` | The indicator that set `level` (e.g., `mood` on the sleep dot); the dot label reads "{reason} · {level}" (RN6). `null` when green. |
 
 ### BodyView

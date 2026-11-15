@@ -97,7 +97,8 @@ listed in §A.
 - **Decision**: `libs/health-rules/src/thresholds.ts` holds every range of RN1 with a `source` and a
   `sourceStatus: 'cited' | 'to_verify' | 'team_criterion'`:
   pressure, pulse → `cited` (AHA/ACC 2025, AHA); sleep → `cited` (AASM/SRS);
-  oxygen → WHO Pulse Oximetry Training Manual; temperature normal 36,1–37,2 → MedlinePlus;
+  pulse bands outside 60–100 and the sleep 3-night red rule → `team_criterion` (user decision
+  2026-11-15); oxygen → WHO Pulse Oximetry Training Manual; temperature normal 36,1–37,2 → MedlinePlus;
   fever ≥ 38,0 → CDC; amber 37,3–37,9 → between MedlinePlus normal and CDC fever;
   hypothermia < 35,0 → Mayo Clinic (standard clinical definition); mood → `team_criterion`, shown
   in the app as "criterio del equipo, no clínico".
@@ -122,7 +123,7 @@ listed in §A.
   once. The mood metric card and the verdict panel (when the action comes from mood) show the full
   note inline.
 - **Baseline SD floor (RN3)**: `sd = max(computed, MIN_SD[indicator])`, with `MIN_SD` in
-  `config/constants.ts`: sleep 0.5 h, mood 0.5, resting HR 3 bpm, systolic 4 mmHg, diastolic
+  `libs/health-rules/src/constants.ts`: sleep 0.5 h, mood 0.5, resting HR 3 bpm, systolic 4 mmHg, diastolic
   3 mmHg, body temperature 0.2 °C, SpO₂ 1 %. Seeded history also varies slightly and
   deterministically (fixed seed) around the scenario values: HR ±3, BP ±4/±3, temp ±0.2, SpO₂ ±1.
 - **"Tu normal" (RN3)**: mean and standard deviation of the first 14 days, fixed afterwards; applies to
@@ -204,7 +205,12 @@ listed in §A.
 
 ### R18. Architecture enforced by lint (ui-build §1.1)
 - **Decision**: replace the current `no-restricted-imports` rule with `eslint-plugin-boundaries`
-  element types `libs`, `domain`, `application`, `ports`, `adapters`, `ui`, `config`, `composition`;
+  element types `libs`, `domain`, `application`, `ports`, `adapters`, `ui`, `config`, `composition`,
+  `backend`. `domain` imports only `libs` — the check-in script, agenda and scenario data enter the
+  reducer as parameters (user decision 2026-11-15); `application`, `adapters`, `ui` and
+  `composition` may import `config`; only `App.tsx`/`main.tsx` import `composition-root.ts`, and the
+  UI receives the wired ports through a React context (`frontend/src/ui/AppServices.tsx`);
+  `frontend` and `backend` never import each other;
   `no-restricted-syntax` forbids `new <X>Adapter|Repository|Devices|Recognizer|Synth|Agenda|Clock|
   Connectivity(...)` outside `composition-root.ts` and tests; `max-lines` 200 for
   `application/use-cases/**`; `no-magic-numbers` everywhere except `config/**`,

@@ -3,5 +3,5 @@ dist/
 build/
 coverage/
 *.min.js
-public/models/
+frontend/public/models/
 package-lock.json
