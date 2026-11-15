@@ -91,6 +91,19 @@ describe('NowCard', () => {
     expect(screen.getByText(messages['agenda.dailyCheckin'])).toBeInTheDocument();
   });
 
+  it('shows no "Empezar" button when the current item is not the check-in', () => {
+    const eva: NonNullable<HomeView['now']> = {
+      itemId: 'eva',
+      time: '10:00',
+      titleKey: 'agenda.eva',
+      progress: { done: 1, total: 5 },
+    };
+    render(<NowCard now={eva} onStart={vi.fn()} />);
+
+    expect(screen.getByText(messages['agenda.eva'])).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: messages['home.start'] })).toBeNull();
+  });
+
   it('calls onStart exactly once when "Empezar" is pressed', () => {
     const onStart = vi.fn();
     render(<NowCard now={now} onStart={onStart} />);

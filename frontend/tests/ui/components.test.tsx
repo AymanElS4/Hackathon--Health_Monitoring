@@ -55,7 +55,9 @@ describe('Badge', () => {
     render(<Badge level="amber">{messages['level.amber']}</Badge>);
 
     const badge = screen.getByText(messages['level.amber']);
-    expect(badge).toHaveClass('text-level-amber');
+    expect(badge).toHaveClass('text-ink');
+    expect(badge).not.toHaveClass('text-level-amber');
+    expect(badge.querySelector('[data-testid="badge-level-marker"]')).not.toBeNull();
     expect(badge.className).not.toMatch(/primary/);
   });
 
@@ -63,7 +65,9 @@ describe('Badge', () => {
     render(<Badge level="red">{messages['level.red']}</Badge>);
 
     const badge = screen.getByText(messages['level.red']);
-    expect(badge).toHaveClass('text-level-red');
+    expect(badge).toHaveClass('text-ink');
+    expect(badge).not.toHaveClass('text-level-red');
+    expect(badge.querySelector('[data-testid="badge-level-marker"]')).not.toBeNull();
     expect(badge.className).not.toMatch(/primary/);
   });
 

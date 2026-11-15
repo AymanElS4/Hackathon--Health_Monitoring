@@ -165,7 +165,8 @@ export function buildHomeView(input: HomeViewInput): HomeView {
   const agenda = [...input.agenda].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
   const hasCheckToday = input.lastCheckToday !== null;
   const pending = agenda.filter((item) => !isCompleted(item, hasCheckToday));
-  const found = currentIndex(pending, formatHHmm(input.now));
+  const nowHHmm = formatHHmm(input.now);
+  const found = currentIndex(pending, nowHHmm);
   // With no upcoming item left, the last item not done stays current.
   const index = found === -1 ? pending.length - 1 : found;
 
@@ -203,7 +204,11 @@ export function buildHomeView(input: HomeViewInput): HomeView {
       avatarUrl: mission.avatarUrl,
     },
     now,
-    next: pending.slice(index + 1, index + 1 + NEXT_MAX),
+    // "Después" lists only upcoming items: a past item that is still not done is pending, not next.
+    next: pending
+      .slice(index + 1)
+      .filter((item) => item.time >= nowHHmm)
+      .slice(0, NEXT_MAX),
     pendingToday: pending.length,
     status: statusFrom(input.lastCheckToday, input.previousChecks),
   };

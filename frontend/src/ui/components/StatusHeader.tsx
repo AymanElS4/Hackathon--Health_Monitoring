@@ -9,7 +9,7 @@ export interface StatusHeaderProps {
   /** `'none'` when there is no check today; shows "Sin chequeo hoy". */
   verdict: Verdict | 'none';
   mood: StatusMood | null;
-  /** Optional element at the right end of the title row (e.g. "Ver historial →"). */
+  /** Optional element at the right end of the title row (e.g. "Ver historial →"). It never wraps. */
   trailing?: ReactNode;
 }
 
@@ -20,29 +20,34 @@ const VERDICT_LEVEL: Record<Verdict, Level> = {
   alert: 'red',
 };
 
-/** Title, today's verdict chip and mood chip for Home (FR-016, SC-010). The verdict word appears once. */
+/**
+ * Title of "Estado de Ana" with its trailing link on row 1, and the verdict and mood chips (or
+ * "Sin chequeo hoy") on row 2. The rows are fixed, so the link never shares a line with the chips.
+ * The verdict word appears once (SC-010).
+ */
 export function StatusHeader({ crewName, verdict, mood, trailing }: StatusHeaderProps) {
   const hasCheck = verdict !== 'none';
 
   return (
     <section className="flex flex-col gap-sm">
-      <div className="flex flex-wrap items-center gap-sm">
-        <h2 className="text-body font-bold uppercase text-ink">{t('status.title', { name: crewName })}</h2>
-        {hasCheck && (
-          <>
-            <Badge level={VERDICT_LEVEL[verdict]}>
-              {t('status.today', { verdict: t(`status.verdict.${verdict}`) })}
-            </Badge>
-            {mood !== null && (
-              <Badge level={mood.level} mark={mood.teamCriterion}>
-                {t('status.mood', { value: mood.value, of: mood.of })}
-              </Badge>
-            )}
-          </>
-        )}
-        {trailing !== undefined && <div className="ml-auto">{trailing}</div>}
+      <div className="flex items-center justify-between gap-md">
+        <h2 className="whitespace-nowrap text-body font-bold uppercase text-ink">
+          {t('status.title', { name: crewName })}
+        </h2>
+        {trailing !== undefined && <div className="whitespace-nowrap">{trailing}</div>}
       </div>
-      {!hasCheck && <p className="text-meta text-ink-secondary">{t('status.noCheck')}</p>}
+      {hasCheck ? (
+        <div className="flex flex-wrap items-center gap-sm">
+          <Badge level={VERDICT_LEVEL[verdict]}>{t('status.today', { verdict: t(`status.verdict.${verdict}`) })}</Badge>
+          {mood !== null && (
+            <Badge level={mood.level} mark={mood.teamCriterion}>
+              {t('status.mood', { value: mood.value, of: mood.of })}
+            </Badge>
+          )}
+        </div>
+      ) : (
+        <p className="text-meta text-ink-secondary">{t('status.noCheck')}</p>
+      )}
     </section>
   );
 }

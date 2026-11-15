@@ -113,13 +113,14 @@ describe('StatusHeader trailing slot', () => {
     );
 
     const link = screen.getByRole('link', { name: messages['home.history'] });
-    expect(link.parentElement).toHaveClass('ml-auto');
+    expect(link.parentElement).toHaveClass('whitespace-nowrap');
     expect(screen.getByText(t('status.noCheck'))).toBeInTheDocument();
   });
 
   it('renders no trailing wrapper when no trailing element is given', () => {
     const { container } = render(<StatusHeader crewName="Ana" verdict="none" mood={null} />);
 
-    expect(container.querySelector('.ml-auto')).toBeNull();
+    const row = container.querySelector('h2')?.parentElement;
+    expect(row?.children).toHaveLength(1);
   });
 });

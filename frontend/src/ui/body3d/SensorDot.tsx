@@ -1,10 +1,14 @@
 import type { CSSProperties } from 'react';
 import type { Indicator, Level, SensorKey } from '@base-vital/contracts';
-import { BODY_LEADER_PX, LEVEL_COLORS, SENSOR_COLORS, type LevelColor } from '../../config/constants';
+import {
+  BODY_LEADER_PX,
+  LEVEL_COLORS,
+  SENSOR_COLORS,
+  SENSOR_RING_PX,
+  type LabelPlacement,
+  type LevelColor,
+} from '../../config/constants';
 import { t } from '../../config/messages.es';
-
-/** Side of the dot where the status pill goes. Right by default. */
-export type LabelSide = 'left' | 'right';
 
 export interface SensorDotProps {
   sensor: SensorKey;
@@ -23,9 +27,12 @@ export interface SensorDotProps {
    * image with the same visuals.
    */
   onSensorTap?: (sensor: SensorKey) => void;
-  /** Where the status pill goes relative to the dot; the dot stays on the body side. Default `right`. */
-  labelSide?: LabelSide;
+  /** Where the status pill goes relative to the dot (`LABEL_PLACEMENT`). Default `right`. */
+  placement?: LabelPlacement;
 }
+
+/** Half of the ring box: the distance from the dot center to the ring edge is this fraction of the box. */
+const RING_HALF = 0.5;
 
 /**
  * Text color of the status pill. The text is always `ink` (secondary ink fails AA at 13 px); the
@@ -88,7 +95,7 @@ export function SensorDot({
   focused,
   measuring,
   onSensorTap,
-  labelSide = 'right',
+  placement = 'right',
 }: SensorDotProps) {
   const colors: LevelColor | null = level === null ? null : LEVEL_COLORS[level];
   const fill = level === 'unknown' ? LEVEL_COLORS.unknown.fill : SENSOR_COLORS[sensor];
@@ -106,10 +113,22 @@ export function SensorDot({
   const dotSize = altered ? 'h-sensorDotAltered w-sensorDotAltered' : 'h-sensorDot w-sensorDot';
   const interactive = onSensorTap !== undefined;
   // The root takes no pointer events: only the tap target inside the ring box does (see below).
+  // Above and below placements take the pill out of the flow, so the root stays the size of the ring box.
+  const vertical = placement === 'above-left' || placement === 'below-left';
+  const ringHalfPx = SENSOR_RING_PX * RING_HALF;
+  const pillOffsetPx = ringHalfPx + BODY_LEADER_PX;
+  const verticalLeaderStyle: CSSProperties =
+    placement === 'above-left'
+      ? { left: 'calc(50% - 0.5px)', bottom: `calc(50% + ${ringHalfPx}px)`, height: BODY_LEADER_PX }
+      : { left: 'calc(50% - 0.5px)', top: `calc(50% + ${ringHalfPx}px)`, height: BODY_LEADER_PX };
+  const verticalPillStyle: CSSProperties =
+    placement === 'above-left'
+      ? { right: '50%', bottom: `calc(50% + ${pillOffsetPx}px)` }
+      : { right: '50%', top: `calc(50% + ${pillOffsetPx}px)` };
   const rootClass = [
     'relative inline-flex items-center justify-start rounded-full bg-transparent p-0 pointer-events-none',
     interactive ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary' : '',
-    labelSide === 'left' ? 'flex-row-reverse' : '',
+    placement === 'left' ? 'flex-row-reverse' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -152,7 +171,15 @@ export function SensorDot({
           />
         )}
       </span>
-      {pill && (
+      {pill && vertical && (
+        <span
+          aria-hidden="true"
+          data-testid="sensor-dot-leader"
+          className="absolute w-px bg-line"
+          style={verticalLeaderStyle}
+        />
+      )}
+      {pill && !vertical && (
         <span
           aria-hidden="true"
           data-testid="sensor-dot-leader"
@@ -162,7 +189,8 @@ export function SensorDot({
       )}
       {pill && colors && (
         <span
-          className={`inline-flex shrink-0 flex-col items-start rounded-card border border-line bg-card px-sm py-xs text-meta font-semibold leading-tight shadow-ambient ${PILL_TEXT_CLASSES[pill.tone]}`}
+          style={vertical ? verticalPillStyle : undefined}
+          className={`${vertical ? 'absolute' : 'inline-flex shrink-0'} flex-col items-start rounded-card border border-line bg-card px-xs py-0.5 text-meta font-semibold leading-none shadow-ambient ${PILL_TEXT_CLASSES[pill.tone]}`}
         >
           <span className="whitespace-nowrap" data-testid="sensor-dot-pill-name">
             {pill.name}

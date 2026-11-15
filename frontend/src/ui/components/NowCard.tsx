@@ -49,12 +49,15 @@ export function NowCard({ now, onStart }: NowCardProps) {
           ) : (
             <span />
           )}
-          <Button onClick={onStart} shape="pill">
-            <span className="inline-flex items-center gap-sm">
-              {t('home.start')}
-              <Play aria-hidden="true" className="h-lg w-lg" />
-            </span>
-          </Button>
+          {/* "Empezar" starts the check-in only; any other item has nothing to start in 001. */}
+          {now.action === 'start_checkin' && (
+            <Button onClick={onStart} shape="pill">
+              <span className="inline-flex items-center gap-sm">
+                {t('home.start')}
+                <Play aria-hidden="true" className="h-lg w-lg" />
+              </span>
+            </Button>
+          )}
         </footer>
       </div>
     </Card>

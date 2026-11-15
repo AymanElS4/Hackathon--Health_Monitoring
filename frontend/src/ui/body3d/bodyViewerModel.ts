@@ -5,7 +5,7 @@
  * `sensorPositions.ts`, which is the only body module that imports three.
  */
 import { SensorKey, type Level, type SensorReading } from '@base-vital/contracts';
-import type { LabelSide } from './SensorDot';
+import { LABEL_PLACEMENT, type LabelPlacement } from '../../config/constants';
 
 /** The reading fields the body needs. Both `SensorReading` and `StatusReading` have them. */
 export type BodyReading = Pick<SensorReading, 'sensor' | 'level' | 'reason' | 'teamCriterion'>;
@@ -19,24 +19,12 @@ export interface BodyDotModel {
   teamCriterion: boolean;
   focused: boolean;
   measuring: boolean;
-  labelSide: LabelSide;
+  placement: LabelPlacement;
 }
 
-/**
- * Label side of each dot: the side of the screen away from the body centre (RF6). The body's left
- * arm and chest are on the screen right, its right arm on the screen left.
- */
-const LABEL_SIDE: Record<SensorKey, LabelSide> = {
-  sleep: 'right',
-  pulse: 'right',
-  pressure: 'left',
-  temperature: 'right',
-  oxygen: 'left',
-};
-
-/** Label side of a sensor's dot. */
-export function labelSideOf(sensor: SensorKey): LabelSide {
-  return LABEL_SIDE[sensor];
+/** Status pill placement of a sensor's dot (`LABEL_PLACEMENT`, T072b fix 2). */
+export function placementOf(sensor: SensorKey): LabelPlacement {
+  return LABEL_PLACEMENT[sensor];
 }
 
 /** Name of the empty node that marks a sensor on the .glb (contracts/body-glb.md). */
@@ -66,7 +54,7 @@ export function bodyDotModels(
       teamCriterion: reading?.teamCriterion ?? false,
       focused,
       measuring: measuring && focused,
-      labelSide: labelSideOf(sensor),
+      placement: placementOf(sensor),
     };
   });
 }

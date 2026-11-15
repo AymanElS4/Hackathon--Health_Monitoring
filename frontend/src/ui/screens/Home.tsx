@@ -145,7 +145,6 @@ export function Home() {
                 }
               />
               <div className="flex flex-1 gap-md">
-                {/* The left gutter keeps the left-side status pills inside the card; the body is centered in the rest. */}
                 <div className="flex w-2/5 flex-col items-center gap-sm">
                   <LazyBodyViewer
                     readings={view.status.readings}
@@ -161,8 +160,12 @@ export function Home() {
                     verdict={view.status.verdict}
                     mood={view.status.mood}
                     trailing={
-                      <Link to={HISTORY_PATH} className="text-small font-semibold text-primary">
+                      <Link
+                        to={HISTORY_PATH}
+                        className="inline-flex items-center gap-xs whitespace-nowrap text-small font-semibold text-primary"
+                      >
                         {t('home.history')}
+                        <ArrowRight aria-hidden="true" className="h-lg w-lg" />
                       </Link>
                     }
                   />

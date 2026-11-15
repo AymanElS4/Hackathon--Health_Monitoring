@@ -106,7 +106,7 @@ export const BODY_POLAR_ANGLE_RAD = Math.PI / 2;
 export const BODY_CAMERA_FOV_DEG = 30;
 
 /** Space kept around the fitted body (1 = touching the frame edge). */
-export const BODY_FIT_MARGIN = 1.1;
+export const BODY_FIT_MARGIN = 1.35;
 
 /**
  * Z-index range of the body labels (drei `Html`, `zIndexRange`). The labels stay below the bottom
@@ -122,6 +122,22 @@ export const BODY_LEADER_PX = 16;
 
 /** Box of one body sensor dot in px (`TOKENS.size.sensorRing`). Its center is the dot center. */
 export const SENSOR_RING_PX = TOKENS.size.sensorRing;
+
+/**
+ * Where a sensor's status pill goes, relative to its dot. `right` and `left` put the pill beside the
+ * dot on the same line; `above-left` and `below-left` put it above or below and to the left, with a
+ * short vertical leader, so the pills of neighbouring dots do not collide on the body.
+ */
+export type LabelPlacement = 'right' | 'left' | 'above-left' | 'below-left';
+
+/** Pill placement per body sensor (T072b fix 2). Pressure sits above the arm, oxygen below the hand. */
+export const LABEL_PLACEMENT: Readonly<Record<SensorKey, LabelPlacement>> = {
+  sleep: 'right',
+  pulse: 'right',
+  temperature: 'right',
+  pressure: 'above-left',
+  oxygen: 'below-left',
+};
 
 /** Local body image shown when the 3D body cannot run (CL5, ui-build §3 #2). */
 export const BODY_FALLBACK_URL = '/models/body-fallback.png';

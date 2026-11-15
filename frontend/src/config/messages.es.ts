@@ -65,7 +65,7 @@ export const messages: Record<string, string> = {
   'value.resting_heart_rate': '{value} lpm',
   'value.oxygen_saturation': '{value} %',
   'value.body_temperature': '{value} °C',
-  'value.blood_pressure': '{systolic}/{diastolic}',
+  'value.blood_pressure': '{systolic}/{diastolic} mmHg',
   'value.mood': '{value}',
   'value.missing': '—',
 
@@ -108,7 +108,7 @@ export const messages: Record<string, string> = {
   'home.estimated': 'Tiempo estimado {min} min',
   'home.pending': '{n} actividades pendientes hoy',
   'home.pending.one': '1 actividad pendiente hoy',
-  'home.history': 'Ver historial →',
+  'home.history': 'Ver historial',
   'home.avatarAlt': 'Avatar de la tripulante',
   'home.howAreYou': 'Cómo estás',
   'home.timeChip': '{time} · {min} min',

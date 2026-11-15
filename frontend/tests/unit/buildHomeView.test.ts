@@ -181,10 +181,10 @@ describe('buildHomeView at 13:30 (past times are not done)', () => {
     expect(view.now?.progress).toEqual({ done: 0, total: 5 });
   });
 
-  it('lists the following not-done items after the check-in in "Después" with no check', () => {
+  it('lists only the upcoming not-done items in "Después" with no check: the past EVA and biology are not next', () => {
     const view = buildHomeView(input({ now: at(13, 30), lastCheckToday: null }));
 
-    expect(view.next).toEqual([EVA, BIO_EXPERIMENT]);
+    expect(view.next).toEqual([EXERCISE]);
     expect(view.pendingToday).toBe(5);
   });
 
@@ -233,11 +233,11 @@ describe('buildHomeView check-in done at 09:35', () => {
 });
 
 describe('buildHomeView after the last item', () => {
-  it('keeps the daily check-in current at 19:00 while no check is saved', () => {
+  it('keeps the daily check-in current at 19:00 while no check is saved, with no next items', () => {
     const view = buildHomeView(input({ now: at(19, 0) }));
 
     expect(view.now).toMatchObject({ itemId: 'daily-checkin' });
-    expect(view.next).toEqual([EVA, BIO_EXPERIMENT]);
+    expect(view.next).toEqual([]);
     expect(view.pendingToday).toBe(5);
   });
 });
