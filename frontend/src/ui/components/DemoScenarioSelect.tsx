@@ -45,9 +45,11 @@ export function DemoScenarioSelect({
   const selectId = useId();
   const [pending, setPending] = useState<DemoScenarioId | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const next = DemoScenarioId.parse(event.target.value);
+    setError(false);
     setPending(next === currentId ? null : next);
   };
 
@@ -60,6 +62,8 @@ export function DemoScenarioSelect({
       await reseed?.(pending);
       setPending(null);
       onChanged(pending);
+    } catch {
+      setError(true);
     } finally {
       setBusy(false);
     }
@@ -86,7 +90,7 @@ export function DemoScenarioSelect({
       </select>
       {pending !== null && (
         <div role="alert">
-          <p>{t('scenario.resetWarning')}</p>
+          <p>{error ? t('scenario.changeError') : t('scenario.resetWarning')}</p>
           <button type="button" onClick={handleConfirm} disabled={busy}>
             {t('scenario.confirm')}
           </button>

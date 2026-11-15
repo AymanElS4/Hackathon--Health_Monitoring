@@ -5,10 +5,9 @@ import type { AgendaItem } from '@base-vital/contracts';
 // No exit-check or EVA item: out of scope for this prototype.
 
 export const DEMO_AGENDA: AgendaItem[] = [
-  { time: '07:30', titleKey: 'agenda.daily_check' },
-  { time: '08:30', titleKey: 'agenda.breakfast' },
+  { time: '08:00', titleKey: 'agenda.breakfast' },
+  { time: '09:30', titleKey: 'agenda.daily_check' },
   { time: '10:00', titleKey: 'agenda.maintenance' },
-  { time: '13:00', titleKey: 'agenda.lunch' },
-  { time: '15:00', titleKey: 'agenda.experiment' },
+  { time: '13:00', titleKey: 'agenda.experiment' },
   { time: '18:00', titleKey: 'agenda.exercise' },
 ];

@@ -21,6 +21,8 @@ export interface LevelColor {
   ring: string | null;
   /** Color of the text label for the level. */
   label: string;
+  /** Background color for a neutral, non-alarm badge. */
+  bg?: string;
   /** Ring line style; omitted means solid. */
   ringStyle?: 'solid' | 'dashed';
   /**
@@ -32,7 +34,7 @@ export interface LevelColor {
 
 /** Is the value fine? One entry per `Level`. */
 export const LEVEL_COLORS = {
-  green: { ring: null, label: '#64748B' },
+  green: { ring: null, label: '#64748B', bg: '#EEF2F6' },
   amber: { ring: '#F2A93B', label: '#F2A93B' },
   red: { ring: '#E5484D', label: '#E5484D' },
   in_doubt: { ring: '#9AA5B1', label: '#9AA5B1', ringStyle: 'dashed' },

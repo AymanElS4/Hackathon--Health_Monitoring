@@ -142,4 +142,18 @@ describe('DemoScenarioSelect', () => {
     await waitFor(() => expect(onChanged).toHaveBeenCalledWith('missing_sensor'));
     expect(await repository.list()).toEqual([]);
   });
+
+  it('surfaces a repository failure without switching scenarios', async () => {
+    const onChanged = vi.fn();
+    vi.spyOn(repository, 'clear').mockRejectedValue(new Error('storage unavailable'));
+    render(
+      <DemoScenarioSelect currentId="normal" repository={repository} onChanged={onChanged} />,
+    );
+
+    fireEvent.change(screen.getByLabelText(LABEL), { target: { value: 'ca4' } });
+    fireEvent.click(screen.getByRole('button', { name: messages['scenario.confirm'] }));
+
+    expect(await screen.findByText(messages['scenario.changeError'])).toBeInTheDocument();
+    expect(onChanged).not.toHaveBeenCalled();
+  });
 });

@@ -1,16 +1,34 @@
+import { useState } from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { createContainer } from './composition-root';
 import { Home } from './ui/screens/Home';
 import { CheckIn } from './ui/screens/CheckIn';
 import { History } from './ui/screens/History';
 
-/** App shell: React Router v5 routes for the three screens. */
 export function App() {
+  const [container, setContainer] = useState(() => createContainer());
+
   return (
     <BrowserRouter>
       <Switch>
-        <Route exact path="/" component={Home} />
+        <Route
+          exact
+          path="/"
+          render={() => (
+            <Home
+              scenarioId={container.scenario.id}
+              repository={container.repository}
+              onScenarioChange={(scenarioId) =>
+                setContainer(createContainer({ scenarioId }))
+              }
+            />
+          )}
+        />
         <Route path="/checkin" component={CheckIn} />
-        <Route path="/historial" component={History} />
+        <Route
+          path="/historial"
+          render={() => <History repository={container.repository} />}
+        />
       </Switch>
     </BrowserRouter>
   );
