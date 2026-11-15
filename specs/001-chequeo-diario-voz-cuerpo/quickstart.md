@@ -33,7 +33,7 @@ below is done **inside the app**, with the "Escenario de demo" selector on Home 
 | CA4 | CA4 | Answer sleep "cinco horas", mood "cuatro", symptoms "no". | Forehead dot shows "Sueño · atención"; verdict "atención" with "Dormiste poco: tómalo con calma". Same result every run. |
 | CA5 | Normal | Drag to rotate the body left and right. | Every dot stays on its spot (forehead, chest, arm, abdomen, fingertip). |
 | CA6 | Normal | Turn wifi off, reload, repeat CA1. | Works the same. |
-| CA7 | Normal | Look at each metric card. | Value, bar with the allowed range, today's mark and the "tu normal" mark; the mood card says "criterio del equipo, no clínico". |
+| CA7 | Normal | Look at each metric row. | Value, bar with the allowed range ("Permitido …"), today's mark and the "tu normal" band; the mood chip "Ánimo n/5 *" and the legend line "* criterio del equipo, no clínico" (D44). |
 | CA8 | Normal | Open **Historial**. | Today's check-in is listed with each value's source (voz / equipo); the 14 earlier days show "simulado". |
 
 ## Edge cases
