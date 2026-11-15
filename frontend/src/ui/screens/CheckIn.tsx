@@ -16,10 +16,10 @@ import { devMetricsVisible } from '../dev/devMetricsVisible';
 import { LazyBodyViewer } from '../body3d/LazyBodyViewer';
 import { BigButtons } from '../components/BigButtons';
 import { Button } from '../components/Button';
-import { MetricRows } from '../components/MetricRows';
 import { SectionHeader } from '../components/SectionHeader';
 import { VerdictPanel } from '../components/VerdictPanel';
 import { AnaBubble, VitaBubble, VitaRow } from '../components/chat/ChatBubble';
+import { ChatSummary } from '../components/chat/ChatSummary';
 import { CheckinProgress } from '../components/chat/CheckinProgress';
 import { ConversationControls } from '../components/chat/ConversationControls';
 import { MicIndicator } from '../components/chat/MicIndicator';
@@ -160,8 +160,8 @@ export function CheckIn() {
       }),
     [snapshot.readings, snapshot.observations, previousChecks],
   );
-  // The same metric rows as Home, shown inside the verdict message once the verdict is known.
-  const summary = hasOutcome ? <MetricRows readings={summaryRows} focus={bodyView.focus} /> : undefined;
+  // A compact summary (full rows behind "Ver detalle"), shown inside the verdict message once the verdict is known.
+  const summary = hasOutcome ? <ChatSummary readings={summaryRows} focus={bodyView.focus} /> : undefined;
 
   const done = snapshot.step === 'saved';
   const chipStep = chipStepOf(snapshot);

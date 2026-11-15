@@ -36,6 +36,8 @@ import { buildHomeView } from '../../src/application/use-cases/buildHomeView';
 import type { HomeViewInput } from '../../src/application/use-cases/buildHomeView';
 import { formatReadingValue } from '../../src/application/use-cases/formatReadingValue';
 import { computeRangeBar } from '../../src/ui/components/rangeBarLayout';
+import { buildSeedHistory } from '../../src/application/use-cases/seedHistory';
+import { DEMO_SCENARIOS } from '../../src/config/demoScenarios';
 import { DEMO_AGENDA } from '../../src/config/agenda';
 import {
   MISSION,
@@ -253,6 +255,46 @@ describe('buildHomeView status without a check today', () => {
     expect(view.status.mood).toBeNull();
     expect(view.status.readings).toEqual([]);
     expect(view.status.focus).toBeNull();
+  });
+});
+
+describe('buildHomeView status from the latest earlier check (D56)', () => {
+  // The 14 seeded days, newest first, as Home passes them.
+  const SEEDED = buildSeedHistory(DEMO_SCENARIOS.normal, { now: at(9, 20) }).reverse();
+
+  it('shows yesterday\'s simulated check with its rows when there is none today', () => {
+    const view = buildHomeView(input({ now: at(9, 20), lastCheckToday: null, previousChecks: SEEDED }));
+
+    expect(view.status.source).toBe('previous');
+    expect(view.status.when).toEqual({ kind: 'yesterday' });
+    expect(view.status.simulated).toBe(true);
+    expect(view.status.verdict).toBe(SEEDED[0].verdict);
+    expect(view.status.readings.length).toBe(Object.keys(SEEDED[0].readings).length);
+    // Level history is the 13 checks before it, but "tu normal" counts yesterday as day 14.
+    expect(view.status.readings.every((reading) => reading.baseline.ready)).toBe(true);
+  });
+
+  it('gives a calendar date when the latest check is older than yesterday', () => {
+    const view = buildHomeView(input({ now: at(9, 20), previousChecks: SEEDED.slice(2) }));
+
+    expect(view.status.when).toEqual({ kind: 'date', date: '2026-11-12' });
+  });
+
+  it('keeps the daily check-in pending: an earlier check never completes it (D13)', () => {
+    const view = buildHomeView(input({ now: at(9, 20), previousChecks: SEEDED }));
+
+    expect(view.now).toMatchObject({ itemId: 'daily-checkin' });
+    expect(view.now?.progress).toEqual({ done: 0, total: 5 });
+    expect(view.pendingToday).toBe(5);
+  });
+
+  it('uses today\'s check, not the earlier one, when it exists', () => {
+    const view = buildHomeView(input({ lastCheckToday: CHECK_TODAY, previousChecks: SEEDED }));
+
+    expect(view.status.source).toBe('today');
+    expect(view.status.when).toBeNull();
+    expect(view.status.simulated).toBe(false);
+    expect(view.status.verdict).toBe('ok');
   });
 });
 

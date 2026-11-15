@@ -135,6 +135,9 @@ export function Home() {
                     crewName={view.header.crewName}
                     verdict={view.status.verdict}
                     mood={view.status.mood}
+                    source={view.status.source}
+                    when={view.status.when}
+                    simulated={view.status.simulated}
                     trailing={
                       <Link
                         to={HISTORY_PATH}

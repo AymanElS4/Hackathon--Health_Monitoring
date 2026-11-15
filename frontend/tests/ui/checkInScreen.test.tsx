@@ -497,6 +497,7 @@ describe('Check-in summary rows (T091)', () => {
     renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
 
     await finishCheckin();
+    fireEvent.click(await screen.findByRole('button', { name: t('checkin.details.show') }));
     const rows = document.querySelectorAll<HTMLElement>('li[data-highlighted]');
     expect(rows).toHaveLength(METRIC_ORDER.length);
     const action = screen.getByText(t('action.slept_little'));
@@ -523,7 +524,8 @@ describe('Check-in summary rows (T091)', () => {
     renderCheckIn(buildContainer(new FakeVoice({ mode: 'manual' })));
 
     await finishCheckin();
-    const sleepRow = Array.from(document.querySelectorAll<HTMLElement>('li[data-highlighted]')).find((row) =>
+    fireEvent.click(await screen.findByRole('button', { name: t('checkin.details.show') }));
+    const sleepRow =Array.from(document.querySelectorAll<HTMLElement>('li[data-highlighted]')).find((row) =>
       row.textContent?.includes(t('sensor.sleep')),
     );
     expect(sleepRow?.querySelector('[data-testid="range-marker"]')).not.toBeNull();
