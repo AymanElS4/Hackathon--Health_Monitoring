@@ -44,7 +44,14 @@ export default defineConfig({
   ],
   test: {
     environment: 'jsdom',
+    environmentOptions: {
+      jsdom: {
+        url: 'http://localhost/',
+      },
+    },
     setupFiles: ['tests/setup.ts'],
+    // Feature 002's set-aside sources and tests (see decisions.md D18-D31) are not part of 001.
+    exclude: ['**/node_modules/**', '**/dist/**', 'src/features-002/**'],
     // Pins the local time zone so calendar-day tests (mission day, agenda HH:mm) are deterministic.
     env: { TZ: 'America/Guayaquil' },
   },

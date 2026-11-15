@@ -194,6 +194,7 @@ export const messages: Record<string, string> = {
   'scenario.resetWarning': 'Cambiar de escenario reinicia el historial',
   'scenario.confirm': 'Cambiar y reiniciar',
   'scenario.cancel': 'Cancelar',
+  'scenario.changeError': 'No se pudo completar el cambio de escenario. Revisa el historial antes de volver a intentarlo.',
 };
 
 /** Spanish number format: decimal comma, at most one decimal ("7,5", "16"). */

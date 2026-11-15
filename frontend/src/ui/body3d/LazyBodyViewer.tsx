@@ -53,13 +53,15 @@ export function LazyBodyViewer(props: BodyFallbackProps) {
     return () => clearTimeout(timer);
   }, [phase]);
 
-  // The body area has a fixed height (`size.bodyArea`); both the 3D view and the fallback fill it.
-  // While loading, the fallback is absolute underneath; the canvas comes later in the DOM and is
-  // transparent, so the fallback shows through until the model is drawn.
+  // The body area is at least `size.bodyArea` tall and takes the free height of its column. Every
+  // layer is absolute inside it, so the 3D view and the fallback both fill the same box. While
+  // loading, the fallback is underneath; the canvas comes later in the DOM and is transparent.
   return (
-    <div className="relative flex h-bodyArea w-full items-center justify-center">
+    <div className="relative min-h-bodyArea w-full flex-1">
       {phase === 'failed' ? (
-        <BodyFallback {...props} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <BodyFallback {...props} />
+        </div>
       ) : (
         <>
           {phase === 'loading' && (
@@ -70,7 +72,7 @@ export function LazyBodyViewer(props: BodyFallbackProps) {
           {/* While loading, the canvas is transparent but covers the placeholder: it must not take taps. */}
           <div
             data-testid="body-viewer-layer"
-            className={`h-full w-full ${phase === 'loading' ? 'pointer-events-none' : ''}`}
+            className={`absolute inset-0 ${phase === 'loading' ? 'pointer-events-none' : ''}`}
           >
             <ViewerErrorBoundary onError={() => setPhase('failed')}>
               <Suspense fallback={null}>

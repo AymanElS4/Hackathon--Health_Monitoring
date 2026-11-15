@@ -146,7 +146,7 @@ export function Home() {
               />
               <div className="flex flex-1 gap-md">
                 {/* The left gutter keeps the left-side status pills inside the card; the body is centered in the rest. */}
-                <div className="flex w-2/5 flex-col items-center gap-sm pl-bodyLabelGutter pr-bodyLabelRoom">
+                <div className="flex w-2/5 flex-col items-center gap-sm">
                   <LazyBodyViewer
                     readings={view.status.readings}
                     focus={selectedSensor}

@@ -41,6 +41,11 @@ describe('LEVEL_COLORS', () => {
     const green = (LEVEL_COLORS as unknown as Record<string, { ring: unknown }>).green;
     expect(green.ring).toBeNull();
   });
+
+  it('uses the neutral background and slate label for green', () => {
+    expect(LEVEL_COLORS.green.label).toBe('#64748B');
+    expect(LEVEL_COLORS.green.bg).toBe('#EEF2F6');
+  });
 });
 
 describe('color tables do not share values', () => {

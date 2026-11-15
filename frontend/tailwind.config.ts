@@ -31,12 +31,7 @@ const fontSize = Object.fromEntries(
   Object.entries(TOKENS.font.size).map(([name, value]) => [name, px(value)]),
 );
 
-const spacing = {
-  ...Object.fromEntries(Object.entries(TOKENS.spacing).map(([name, value]) => [name, px(value)])),
-  // Body column gutters for the status pills (`pl-bodyLabelGutter`, `pr-bodyLabelRoom`).
-  bodyLabelGutter: px(TOKENS.size.bodyLabelGutter),
-  bodyLabelRoom: px(TOKENS.size.bodyLabelRoom),
-};
+const spacing = Object.fromEntries(Object.entries(TOKENS.spacing).map(([name, value]) => [name, px(value)]));
 
 const config: Config = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -119,6 +114,7 @@ const config: Config = {
       minHeight: {
         touch: px(TOKENS.size.touchTarget),
         nav: px(TOKENS.size.navTouchTarget),
+        bodyArea: px(TOKENS.size.bodyArea),
       },
       minWidth: {
         touch: px(TOKENS.size.touchTarget),

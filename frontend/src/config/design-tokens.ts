@@ -78,15 +78,7 @@ export const TOKENS = {
     metricIcon: 28,
     /** Level marker inside a body status pill, px. */
     levelMarker: 8,
-    /** Height of the body area (3D body or fallback image) in the "Cómo estás" card, px. Fixed so Home fits 1280×800. */
+    /** Minimum height of the body area (3D body or fallback image) in the "Cómo estás" card, px. The area grows to fill the card. */
     bodyArea: 360,
-    /**
-     * Room left of the body for the left-side status pills, px. The widest left pill (≈150 px, plus its
-     * leader and the dot offset) then starts at the card's left edge on Home, the body is centered in
-     * the rest, and the right-side pills stay clear of the status column.
-     */
-    bodyLabelGutter: 130,
-    /** Room right of the body for the right-side status pills, so they stay clear of the next column, px. */
-    bodyLabelRoom: 72,
   },
 } as const;
