@@ -1,0 +1,35 @@
+{
+  "name": "@base-vital/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Flight-surgeon sync service (feature 004-resumen-cirujano)",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/backend/src/main.js",
+    "test": "vitest run",
+    "test:integration": "vitest run tests/integration",
+    "seed:demo": "node dist/backend/scripts/seed-demo.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.10",
+    "@nestjs/core": "^11.2.10",
+    "@nestjs/platform-express": "^11.2.10",
+    "pg": "^8.23.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.2.10",
+    "@swc/core": "^1.16.22",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.2",
+    "typescript": "^5.9.3",
+    "unplugin-swc": "^2.0.0",
+    "vitest": "^2.1.9"
+  }
+}
