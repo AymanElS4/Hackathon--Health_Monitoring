@@ -126,7 +126,7 @@ frontend/                         # @base-vital/frontend — astronaut app (offl
 │   ├── adapters/                 # vosk/, web-speech-tts/, simulated-devices/, indexeddb/,
 │   │                             # static-agenda/, navigator-connectivity/, clock/, fakes/
 │   ├── ui/
-│   │   ├── components/           # Card, SectionHeader, Badge, Button, StatCard, NowCard, NextList,
+│   │   ├── components/           # Card, SectionHeader, Badge, Button, NowCard, NextList, MetricRows,
 │   │   │                         # HomeHeader, BottomNav, StatusHeader, MetricRow, RangeBar, Legend,
 │   │   │                         # DemoScenarioSelect, BigButtons, VerdictPanel
 │   │   ├── screens/              # Home, CheckIn, History

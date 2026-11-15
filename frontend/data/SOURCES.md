@@ -26,8 +26,25 @@ until an entry is verified, its use is provisional.
   J.J.L., "Analysis of a sleep-dependent neuronal feedback loop: the slow-wave microcontinuity of
   the EEG", IEEE-BME 47(9):1185–1194, 2000 (plus the standard PhysioNet citation). Total size
   8.1 GB; only a few hypnogram files are needed.
-- Used for: 14 nightly total-sleep values in `frontend/data/sleep-history.json`.
-- Obligations: attribution.
+- Files used: the 14 `*-Hypnogram.edf` files of the sleep-cassette set (EDF+ files with only an
+  "EDF Annotations" signal, about 4 KB each). No PSG recordings, no signals, no subject identifiers
+  are used or kept.
+- Used for: 14 nightly total-sleep values in `frontend/data/sleep-history.json`, the simulated
+  history seed (T088). Derived by `frontend/scripts/data/extract-sleep-edf.py`: for each file, the
+  durations of the annotations "Sleep stage 1", "2", "3", "4" and "R" are summed (W, "?" and
+  "Movement time" are excluded), converted to hours and rounded to 0.1 h. Each value must lie in
+  3–11 h. Output: `{ "source": "PhysioNet Sleep-EDF Expanded (sleep-cassette), ODC-By 1.0", "hours": [...] }`.
+  The last two nights are replaced by the scenario `priorNights` in T088, not here.
+- Obligations: attribution (ODC-By 1.0). Credit the dataset and cite it when publishing work based
+  on it. The attribution text goes in the root README ("Créditos", T096, Phase 9): "Sleep data: PhysioNet
+  Sleep-EDF Expanded (sleep-cassette), Open Data Commons Attribution License v1.0."
+- Citations:
+  - Kemp B., Zwinderman A.H., Tuk B., Kamphuisen H.A.C., Oberyé J.J.L., "Analysis of a
+    sleep-dependent neuronal feedback loop: the slow-wave microcontinuity of the EEG", IEEE
+    Transactions on Biomedical Engineering 47(9):1185–1194, 2000.
+  - Goldberger A.L., Amaral L.A.N., Glass L., Hausdorff J.M., Ivanov P.Ch., Mark R.G., Mietus J.E.,
+    Moody G.B., Peng C.-K., Stanley H.E., "PhysioBank, PhysioToolkit, and PhysioNet: Components of a
+    New Research Resource for Complex Physiologic Signals", Circulation 101(23):e215–e220, 2000.
 - Status: verified (2026-11-15)
 
 ### MakeHuman base mesh
@@ -60,6 +77,16 @@ until an entry is verified, its use is provisional.
   | low_temp | 114/74 | 66 | 97 | 35.6 | 7.1, 7.5 |
   | voice_not_understood | 112/72 | 64 | 98 | 36.6 | 7.2, 7.8 |
 - Status: simulated, shown in the app as "equipo simulado".
+- Seeded history (T088, `frontend/src/application/use-cases/seedHistory.ts`): the 14 days before today
+  are simulated (`simulated: true`). Sleep is the Sleep-EDF nights above with the last two replaced by
+  the scenario `priorNights`; the observation schema takes 0.5 h steps, so every sleep value is rounded
+  down to a half hour, so each value keeps its side of the 6 h and 7 h limits.
+  Pulse comes from `data/wesad-hr.json` when it has values in 60–100 bpm; that file is not present yet
+  (T020 partial), so the seeded pulse is the scenario pulse ±3 bpm and is simulated. Blood pressure
+  ±4/±3 mmHg, temperature ±0.2 °C, SpO₂ ±1 %, mood 4 or 5, drawn from a fixed-seed generator and kept in
+  green. A scenario value that is not green (ca4 is near the limit, low_temp is 35.6 °C, in doubt) is
+  replaced by the normal scenario's value as the centre, because the seeded days stand for the usual days.
+  The scenario value is still used for today's reading.
 
 ## Threshold sources (RN1)
 

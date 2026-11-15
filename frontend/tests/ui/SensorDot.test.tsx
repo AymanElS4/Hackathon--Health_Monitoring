@@ -28,7 +28,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Indicator, Level, SensorKey } from '@base-vital/contracts';
 import { SensorDot } from '../../src/ui/body3d/SensorDot';
-import { LEVEL_COLORS, SENSOR_COLORS } from '../../src/config/constants';
+import { LEVEL_COLORS, SENSOR_COLORS, type LabelPlacement } from '../../src/config/constants';
 import { t } from '../../src/config/messages.es';
 
 interface DotProps {
@@ -39,6 +39,7 @@ interface DotProps {
   focused: boolean;
   measuring: boolean;
   onSensorTap?: (sensor: SensorKey) => void;
+  placement?: LabelPlacement;
 }
 
 const BASE: DotProps = {
@@ -235,6 +236,32 @@ describe('SensorDot', () => {
       const pill = screen.getByTestId('sensor-dot-pill-name').parentElement;
       expect(pill).toHaveClass('text-ink');
       expect(pill).not.toHaveClass('text-level-amber');
+    });
+
+    it('above-left places the pill and its leader out of the flow, above the dot', () => {
+      renderDot({ sensor: 'pressure', level: 'amber', reason: 'blood_pressure', placement: 'above-left' });
+
+      const pill = screen.getByTestId('sensor-dot-pill-name').parentElement as HTMLElement;
+      expect(pill).toHaveClass('absolute');
+      expect(pill.style.bottom).toContain('calc(50% +');
+      expect(pill.style.right).toBe('50%');
+      expect(screen.getByTestId('sensor-dot-leader')).toHaveClass('absolute', 'w-px');
+    });
+
+    it('below-left places the pill below the dot', () => {
+      renderDot({ sensor: 'oxygen', level: 'amber', reason: 'oxygen_saturation', placement: 'below-left' });
+
+      const pill = screen.getByTestId('sensor-dot-pill-name').parentElement as HTMLElement;
+      expect(pill).toHaveClass('absolute');
+      expect(pill.style.top).toContain('calc(50% +');
+    });
+
+    it('right keeps the pill in the flow beside the dot', () => {
+      renderDot({ sensor: 'sleep', level: 'amber', reason: 'sleep_hours', placement: 'right' });
+
+      const pill = screen.getByTestId('sensor-dot-pill-name').parentElement as HTMLElement;
+      expect(pill).not.toHaveClass('absolute');
+      expect(screen.getByTestId('sensor-dot-leader')).toHaveClass('h-px');
     });
 
     it('leader line uses the neutral line token, not a level color', () => {

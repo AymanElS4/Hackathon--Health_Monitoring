@@ -8,16 +8,25 @@ export const messages: Record<string, string> = {
   // Check-in script (contracts/checkin-script.md)
   greet: 'Buenos días, Ana. Chequeo diario.',
   'ask.sleep': '¿Cuántas horas dormiste?',
-  'confirm.sleep': 'Escuché {hours} horas. ¿Correcto?',
-  'confirm.sleep.one': 'Escuché 1 hora. ¿Correcto?',
+  'confirm.sleep': 'Escuché que dormiste {hours} horas. ¿Es correcto?',
+  'confirm.sleep.one': 'Escuché que dormiste 1 hora. ¿Es correcto?',
   'ask.mood': 'Del uno al cinco, ¿cómo te sientes?',
-  'confirm.mood': 'Escuché {mood}. ¿Correcto?',
+  'confirm.mood': 'Escuché que tu ánimo es {mood} de 5. ¿Es correcto?',
+  'ask.mood.again': 'Antes de seguir, ¿cómo te sientes? Dime un número del uno al cinco.',
   'ask.symptoms': '¿Tienes algún síntoma?',
   measure: 'Ahora tomo tus signos.',
+  // RN1: the single extra thermometer read after a temperature in doubt
+  'measure.temperature.again': 'Vuelvo a medir la temperatura.',
   'retry.sleep': 'No te entendí bien, ¿me lo repites? Dime un número entre 0 y 16.',
   'retry.mood': 'No te entendí bien, ¿me lo repites? Dime un número del 1 al 5.',
   next: 'Lo próximo: {title} a las {time}.',
   'next.none': 'No hay más actividades hoy.',
+
+  // Chat transcript: Ana's answers as they appear in the conversation (T080a)
+  'answer.sleep': '{hours} horas',
+  'answer.sleep.one': '1 hora',
+  'answer.mood': '{mood} de 5',
+  'chat.partial': '{text}…',
 
   // Verdict headlines (RN5)
   'verdict.ok': 'Estás bien',
@@ -59,15 +68,24 @@ export const messages: Record<string, string> = {
 
   // Dot label: "Ánimo · atención*" (RN6)
   'dot.label': '{reason} · {level}',
+  // Metric row badge when the level comes from another indicator than the row's own: "Ánimo: atención*"
+  'metric.reasonBadge': '{reason}: {level}',
 
   // Display value of a sensor reading (SensorReading.value), units included
   'value.sleep_hours': '{value} h',
   'value.resting_heart_rate': '{value} lpm',
   'value.oxygen_saturation': '{value} %',
   'value.body_temperature': '{value} °C',
-  'value.blood_pressure': '{systolic}/{diastolic}',
+  'value.blood_pressure': '{systolic}/{diastolic} mmHg',
   'value.mood': '{value}',
   'value.missing': '—',
+
+  // Unit shown next to a range bar scale (UI_SCALES, config/constants.ts)
+  'unit.pressure': 'mmHg',
+  'unit.pulse': 'lpm',
+  'unit.oxygen': '%',
+  'unit.temperature': '°C',
+  'unit.sleep': 'h',
 
   // Sensor names inside a sentence, e.g. "Falta el dato de la presión" (action.missing_data)
   'sensor.lower.sleep': 'el sueño',
@@ -84,6 +102,7 @@ export const messages: Record<string, string> = {
   // Baseline, simulation and navigation
   'baseline.learning': 'Aún aprendo tu normal',
   'device.simulated': 'equipo simulado',
+  'meta.separator': '·',
   'history.simulated': 'simulado',
   'history.source.voice': 'voz',
   'history.source.device': 'equipo',
@@ -108,7 +127,7 @@ export const messages: Record<string, string> = {
   'home.estimated': 'Tiempo estimado {min} min',
   'home.pending': '{n} actividades pendientes hoy',
   'home.pending.one': '1 actividad pendiente hoy',
-  'home.history': 'Ver historial →',
+  'home.history': 'Ver historial',
   'home.avatarAlt': 'Avatar de la tripulante',
   'home.howAreYou': 'Cómo estás',
   'home.timeChip': '{time} · {min} min',
@@ -161,8 +180,20 @@ export const messages: Record<string, string> = {
   'checkin.listening': 'Te escucho…',
   'checkin.paused': 'En pausa',
   'checkin.pause': 'Pausa',
-  'checkin.resume': 'Sigue',
-  'checkin.repeat': 'Repite',
+  'checkin.resume': 'Seguir',
+  'checkin.repeat': 'Repetir',
+  'checkin.controlsHint': 'También puedes decir «para» o «repite»',
+  'checkin.confirmHint': 'Di «sí» o «no»',
+  'checkin.hint.finish': 'Di «sí» para terminar',
+  'checkin.progress': 'Pregunta {n} de {of} · {topic}',
+  'checkin.progressLabel': 'Progreso de las preguntas',
+  'checkin.speaking': 'Vita está hablando…',
+  // Icons of the controls and chips (decorative; kept here with the other texts)
+  'checkin.pause.icon': '✋',
+  'checkin.resume.icon': '▶️',
+  'checkin.repeat.icon': '☝️',
+  'checkin.yes.icon': '👍',
+  'checkin.no.icon': '👎',
   'checkin.step.greeting': 'Saludo',
   'checkin.step.sleep': 'Sueño',
   'checkin.step.mood': 'Ánimo',
@@ -174,7 +205,7 @@ export const messages: Record<string, string> = {
   'checkin.answerSend': 'Enviar',
   'checkin.done': 'Chequeo guardado',
   'checkin.save_failed': 'No se pudo guardar el chequeo.',
-  'checkin.backHome': 'Volver a Inicio',
+  'checkin.backHome': 'Volver al inicio',
   'checkin.buttonsHint': 'No te entendí. Toca una opción.',
   'checkin.hoursOption': '{h} h',
   'checkin.moodOption.1': 'muy mal',
@@ -200,6 +231,14 @@ export const messages: Record<string, string> = {
   'status.verdict.attention': 'Atención',
   'status.verdict.alert': 'Alerta',
 
+  // Allowed range of a metric row, derived from the green band of the thresholds (CA7)
+  'allowed.range': '{min}–{max}',
+  'allowed.atLeast': '≥ {value}',
+  'allowed.atLeastHours': '≥ {value} h',
+  'allowed.below': '< {value}',
+  'allowed.bloodPressure': '< {systolic}/{diastolic}',
+  'allowed.shown': 'Permitido {range}',
+
   // Legend under "Estado de Ana" (docs/design/README.md)
   'legend.allowed': 'Permitido',
   'legend.attention': 'Atención',
@@ -217,6 +256,23 @@ export const messages: Record<string, string> = {
   'scenario.confirm': 'Cambiar y reiniciar',
   'scenario.cancel': 'Cancelar',
   'scenario.changeError': 'No se pudo completar el cambio de escenario. Revisa el historial antes de volver a intentarlo.',
+
+  // Dev-only metrics overlay (T095): shown in development or with ?dev=metrics, never in the demo
+  'dev.title': 'Métricas de desarrollo',
+  'dev.checkin': 'Chequeo completo (toque a guardado)',
+  'dev.voiceStart': 'Micrófono abierto tras la pregunta',
+  'dev.finalTranscript': 'Fin de voz a transcripción final',
+  'dev.fps': 'Cuadros por segundo del 3D',
+  'dev.targetMax': 'objetivo ≤ {value}',
+  'dev.targetMin': 'objetivo ≥ {value}',
+  'dev.met': 'cumple',
+  'dev.notMet': 'no cumple',
+  'dev.notMeasured': 'sin medir',
+  'dev.samples': '{count} muestras',
+  'dev.unit.ms': '{value} ms',
+  'dev.unit.s': '{value} s',
+  'dev.unit.fps': '{value} fps',
+  'dev.note': 'Tiempos: la muestra más lenta de la última pasada. FPS: última ventana de 1 s. La voz y la transcripción solo se miden con el reconocedor real.',
 };
 
 /** Spanish number format: decimal comma, at most one decimal ("7,5", "16"). */

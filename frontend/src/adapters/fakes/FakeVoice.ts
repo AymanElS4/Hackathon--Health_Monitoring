@@ -73,6 +73,14 @@ export class FakeVoice implements SpeechRecognizerPort, SpeechSynthesizerPort {
     });
   }
 
+  prepare(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  release(): void {
+    this.stop();
+  }
+
   /** Ends a pending `listen` with null. No-op when not listening. */
   stop(): void {
     this.settle(null);

@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { BODY_LOAD_TIMEOUT_MS } from '../../config/constants';
 import { BodyFallback, type BodyFallbackProps } from './BodyFallback';
+import type { BodyViewerProps } from './BodyViewer';
 import { hasWebGL } from './webgl';
 
 /**
@@ -43,7 +44,10 @@ class ViewerErrorBoundary extends Component<ErrorBoundaryProps, { failed: boolea
  * placeholder is removed when the model reports loaded. The viewer is replaced by the fallback if
  * the model is not loaded within `BODY_LOAD_TIMEOUT_MS` or if loading throws.
  */
-export function LazyBodyViewer(props: BodyFallbackProps) {
+export function LazyBodyViewer({
+  onFrameRate,
+  ...props
+}: BodyFallbackProps & Pick<BodyViewerProps, 'onFrameRate'>) {
   const [webgl] = useState(() => hasWebGL());
   const [phase, setPhase] = useState<ViewerPhase>(webgl ? 'loading' : 'failed');
 
@@ -76,7 +80,7 @@ export function LazyBodyViewer(props: BodyFallbackProps) {
           >
             <ViewerErrorBoundary onError={() => setPhase('failed')}>
               <Suspense fallback={null}>
-                <BodyViewer {...props} onLoaded={() => setPhase('loaded')} />
+                <BodyViewer {...props} onFrameRate={onFrameRate} onLoaded={() => setPhase('loaded')} />
               </Suspense>
             </ViewerErrorBoundary>
           </div>

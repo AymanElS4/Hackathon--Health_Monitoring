@@ -274,4 +274,15 @@ describe('Threshold', () => {
     expect(Threshold.safeParse({ ...entry, component: 'mean' }).success).toBe(false);
     expect(Threshold.safeParse({ ...entry, component: 'Systolic' }).success).toBe(false);
   });
+
+  it('accepts requiresSymptoms as an optional boolean', () => {
+    expect(Threshold.safeParse(entry).success).toBe(true);
+    expect(Threshold.safeParse({ ...entry, requiresSymptoms: true }).success).toBe(true);
+    expect(Threshold.safeParse({ ...entry, requiresSymptoms: false }).success).toBe(true);
+  });
+
+  it('rejects requiresSymptoms that is not a boolean', () => {
+    expect(Threshold.safeParse({ ...entry, requiresSymptoms: 'yes' }).success).toBe(false);
+    expect(Threshold.safeParse({ ...entry, requiresSymptoms: 1 }).success).toBe(false);
+  });
 });

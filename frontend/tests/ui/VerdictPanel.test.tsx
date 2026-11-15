@@ -30,8 +30,8 @@ afterEach(() => {
 describe('VerdictPanel', () => {
   it.each<[Verdict, string, string]>([
     ['ok', 'status.verdict.ok', 'text-level-green'],
-    ['attention', 'status.verdict.attention', 'text-level-amber'],
-    ['alert', 'status.verdict.alert', 'text-level-red'],
+    ['attention', 'status.verdict.attention', 'text-ink'],
+    ['alert', 'status.verdict.alert', 'text-ink'],
   ])('shows the %s label inside a Badge with its level style', (verdict, key, levelClass) => {
     render(<VerdictPanel verdict={verdict} actionKey="" next={NEXT} />);
 

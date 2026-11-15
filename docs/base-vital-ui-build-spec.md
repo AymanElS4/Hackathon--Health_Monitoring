@@ -34,7 +34,7 @@ base-vital/
 │       ├── adapters/             # vosk/, web-speech-tts/, simulated-devices/, indexeddb/,
 │       │                         # static-agenda/, navigator-connectivity/, http-sync/ (optional), fakes/
 │       ├── ui/
-│       │   ├── components/       # Button, Card, Badge, StatCard, SectionHeader (existing set) + new below
+│       │   ├── components/       # Button, Card, Badge, SectionHeader (existing set) + new below
 │       │   ├── screens/          # Home, CheckIn, History
 │       │   └── body3d/           # BodyViewer (R3F), SensorDot, BodyFallback
 │       ├── config/               # design-tokens.ts, constants.ts, messages.es.ts, env.ts (Zod, fail-fast)
@@ -123,11 +123,11 @@ Two separate tables in code: `SENSOR_COLORS` and `LEVEL_COLORS`. A test fails if
 
 | Component | Status | Props (from `HomeView`) |
 |---|---|---|
-| `Card`, `SectionHeader`, `Badge`, `Button`, `StatCard` | Existing set — reuse | — |
+| `Card`, `SectionHeader`, `Badge`, `Button` | Existing set — reuse (`StatCard` removed, D45) | — |
 | `NowCard` | New (composes Card + Button) | `now` |
 | `NextList` | New (composes Card) | `next[]`, `pendingToday` |
 | `StatusHeader` | New | `verdict`, `mood` |
-| `MetricRow` | New (composes StatCard) | one `readings[i]` |
+| `MetricRow` | New (a row per docs/design/README.md, D45) | one `readings[i]` |
 | `RangeBar` | New | `sensor`, `value`, `marker`, `baseline` — zones from thresholds |
 | `Legend` | New | none (static, from messages) |
 | `BodyViewer` / `SensorDot` / `BodyFallback` | New | `readings`, `focus`, `onSensorTap` |

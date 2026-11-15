@@ -1,21 +1,17 @@
 /**
- * Home view model (T053, T072, research R17). Pure: no I/O, no globals. The clock, agenda, last
+ * Home view model (T053, T072, T091, research R17). Pure: no I/O, no globals. The clock, agenda, last
  * check of today, connectivity and mission profile are all passed in by the caller.
- * `status` is empty (verdict 'none') until a check of today exists.
+ * `status` is empty (verdict 'none') until a check of today exists; its readings are the metric
+ * rows of `metricReadings.ts`.
  */
-import {
-  MOOD_MAX,
-  SensorKey,
-  type AgendaItem,
-  type CheckRecord,
-  type Indicator,
-  type Level,
-  type Verdict,
-} from '@base-vital/contracts';
+import { MOOD_MAX, type AgendaItem, type CheckRecord, type Level, type Verdict } from '@base-vital/contracts';
 import { historyValues, levelFor } from '@base-vital/health-rules';
 import { NEXT_MAX } from '../../config/constants';
 import { lightPhase, missionDay } from '../../domain/mission/missionClock';
 import type { LightPhase } from '../../domain/mission/missionClock';
+import { metricReadingsOf, type StatusReading } from './metricReadings';
+
+export type { StatusReading } from './metricReadings';
 
 /** Digits per clock field in `HH:mm`. */
 const CLOCK_FIELD_WIDTH = 2;
@@ -56,15 +52,6 @@ export interface StatusMood {
   teamCriterion: true;
 }
 
-/** Minimal per-sensor reading shown on Home; copied from the stored check (T091 extends it). */
-export interface StatusReading {
-  sensor: SensorKey;
-  value: string;
-  level: Level;
-  reason: Indicator | null;
-  teamCriterion: boolean;
-}
-
 export interface HomeView {
   header: {
     crewName: string;
@@ -95,6 +82,17 @@ function confirmedVoiceMood(record: CheckRecord): number | null {
   return value;
 }
 
+/**
+ * Level of the mood badge. The sleep reading carries the mood when the mood set its level (for
+ * example "in doubt" after CL4, reason `mood`): Home then shows that reading's level, so the
+ * badge and the sensor agree. Otherwise the level comes from the mood rules (RN2).
+ */
+function moodLevelOf(record: CheckRecord, moodValue: number, previousChecks: readonly CheckRecord[]): Level {
+  const sleepReading = record.readings.sleep;
+  if (sleepReading !== undefined && sleepReading.reason === 'mood') return sleepReading.level;
+  return levelFor('mood', moodValue, { history: historyValues(previousChecks, 'mood') }).level;
+}
+
 /** Status of Home from the last check of today; empty (verdict 'none') when there is none. */
 function statusFrom(record: CheckRecord | null, previousChecks: readonly CheckRecord[]): HomeView['status'] {
   if (record === null) {
@@ -107,22 +105,13 @@ function statusFrom(record: CheckRecord | null, previousChecks: readonly CheckRe
       : {
           value: moodValue,
           of: MOOD_MAX,
-          level: levelFor('mood', moodValue, { history: historyValues(previousChecks, 'mood') }).level,
+          level: moodLevelOf(record, moodValue, previousChecks),
           teamCriterion: true,
         };
-  const readings: StatusReading[] = SensorKey.options.flatMap((sensor) => {
-    const reading = record.readings[sensor];
-    return reading
-      ? [
-          {
-            sensor,
-            value: reading.value,
-            level: reading.level,
-            reason: reading.reason,
-            teamCriterion: reading.teamCriterion,
-          },
-        ]
-      : [];
+  const readings = metricReadingsOf({
+    readings: Object.values(record.readings),
+    observations: record.observations,
+    previousChecks,
   });
   return { verdict: record.verdict, mood, readings, focus: null };
 }
@@ -165,7 +154,8 @@ export function buildHomeView(input: HomeViewInput): HomeView {
   const agenda = [...input.agenda].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
   const hasCheckToday = input.lastCheckToday !== null;
   const pending = agenda.filter((item) => !isCompleted(item, hasCheckToday));
-  const found = currentIndex(pending, formatHHmm(input.now));
+  const nowHHmm = formatHHmm(input.now);
+  const found = currentIndex(pending, nowHHmm);
   // With no upcoming item left, the last item not done stays current.
   const index = found === -1 ? pending.length - 1 : found;
 
@@ -203,7 +193,11 @@ export function buildHomeView(input: HomeViewInput): HomeView {
       avatarUrl: mission.avatarUrl,
     },
     now,
-    next: pending.slice(index + 1, index + 1 + NEXT_MAX),
+    // "Después" lists only upcoming items: a past item that is still not done is pending, not next.
+    next: pending
+      .slice(index + 1)
+      .filter((item) => item.time >= nowHHmm)
+      .slice(0, NEXT_MAX),
     pendingToday: pending.length,
     status: statusFrom(input.lastCheckToday, input.previousChecks),
   };

@@ -72,7 +72,7 @@ Zone segments of each bar (red / amber / allowed) are NOT in the view model: the
 | Chip "Ánimo 4/5" | `status.mood` | Last confirmed voice answer | Needs the `*` + "criterio del equipo, no clínico" note (RN6 / constitution VIII) |
 | 3D body + 5 dots | `readings[].sensor`, `level`, `focus` | Last check + session focus | Dot color = sensor (identity); ring = level, only when not green |
 | Tarjeta Presión | `readings[pressure]` | Simulated BP device (seeded, in green for the demo scenario) | Label "simulado" in data/SOURCES.md |
-| Tarjeta Pulso | `readings[pulse]` | WESAD heart-rate replay | |
+| Tarjeta Pulso | `readings[pulse]` | Simulated (scenario pulse ± 3, fixed seed) until WESAD is downloaded; then WESAD heart-rate replay | D37; label "simulado" in data/SOURCES.md |
 | Tarjeta Oxígeno | `readings[oxygen]` | Simulated pulse oximeter | |
 | Tarjeta Temperatura | `readings[temperature]` | Simulated body temperature | |
 | Tarjeta Sueño | `readings[sleep]` | Voice answer of today; history from Sleep-EDF seed | |
@@ -90,7 +90,7 @@ Zone segments of each bar (red / amber / allowed) are NOT in the view model: the
 | 3 | Badge "Óptimo" | Levels are bien / atención / alerta | Use "Bien" |
 | 4 | "Chequeo antes de salir" | Feature 001 is the daily check-in; exit check is 002 | "Chequeo diario" |
 | 5 | "Ánimo 4/5" without note | Team-criterion marker required | "Ánimo 4/5*" + note once on screen |
-| 6 | No "tu normal" mark on the bars | RF8 requires it | Add a small bracket above each bar |
+| 6 | No "tu normal" mark on the bars | RF8 requires it | A light band under each bar (docs/design/README.md, D40) |
 | 7 | Salud / Agenda / Guía tabs | Out of scope in 001 | Keep tabs visible but disabled, or hide them |
 
 ---

@@ -141,8 +141,9 @@ idle → greeting → ask_sleep → confirm_sleep → ask_mood → confirm_mood 
 - Impossible value (RN4) → back to `ask_*` with the "otra vez" message.
 - 2 failed recognitions in a step → `buttons` sub-mode for that step (CL1, RF12).
 - Any step: `para` → `paused` (resume with tap or "sigue"); `repite` → replay current prompt.
-- CL4: after `measuring`, if mood ≥ 4 and pulse outside normal → `reask_mood` once; still ≥ 4 → mood
-  `in_doubt`.
+- CL4 (D33): after `measuring`, if mood ≥ 4 and pulse outside normal (`devicesRead.pulseOutsideNormal`)
+  → `reask_mood` once. The re-ask answer goes through the normal mood confirmation: the same confirmed
+  value → mood `in_doubt`; a different confirmed value replaces it.
 
 ### Sensor phase
 `idle → asking (focus) → measuring → confirmed | in_doubt`; missing device data → level `unknown`.

@@ -114,7 +114,10 @@ describe('BodyViewer labels', () => {
     expect(mock.labels).toHaveLength(5);
     expect(screen.getAllByTestId('html-label')).toHaveLength(5);
     for (const label of mock.labels) {
-      expect(label.occlude).toBe(true);
+      // Occluded by the body mesh only: drei raycasts that object, not the whole scene (CA5).
+      const occluders = label.occlude as { current: { name: string } }[];
+      expect(occluders).toHaveLength(1);
+      expect(occluders[0].current.name).toBe('body');
       expect(label.zIndexRange).toEqual(BODY_LABEL_Z_INDEX_RANGE);
     }
   });

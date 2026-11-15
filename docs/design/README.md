@@ -45,7 +45,9 @@ Precedence when they disagree: `spec.md` > `base-vital-ui-build-spec.md` > this 
 - Line 2: range bar 8 px, zones with 2 px white gaps; **value bubble** above the marker (dark navy `#1E2B3C`,
   white 13/700 text, pointer) + 10 px marker dot with white border.
 - Line 3: "tu normal" = light gray band `#DDE3EA`, 4 px, under the bar (no text).
-- Line 4: cut points only (13 px, `#64748B`), aligned under each zone boundary. No scale ends.
+- Line 4: the allowed range "Permitido …" (13 px, primary blue), centred under the bar (D40). The cut numbers
+  are not printed: they would collide with the centred label. The "tu normal" note, when learning, sits at the
+  right of this line. No scale ends.
 
 ## Legend (bottom of the metrics card, right-aligned, 13 px)
 

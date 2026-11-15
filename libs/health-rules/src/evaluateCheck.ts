@@ -1,6 +1,7 @@
 import {
   SENSOR_INDICATORS,
   SensorKey,
+  type BaselineIndicator,
   type CheckRecord,
   type Indicator,
   type Level,
@@ -10,6 +11,15 @@ import {
   type Symptom,
   type Verdict,
 } from '@base-vital/contracts';
+import {
+  baselineIndicatorsOf,
+  baselineValue,
+  carrierOf,
+  computeBaseline,
+  consecutiveValues,
+  isOutsideNormal,
+} from './baseline';
+import { OUTSIDE_NORMAL_READINGS } from './constants';
 import { levelFor, type LevelResult } from './levels';
 import { FEVER_MIN_CELSIUS } from './thresholds';
 import { decideVerdict, type IndicatorOutcome } from './verdict';
@@ -34,6 +44,11 @@ export interface EvaluateInput {
   symptoms: readonly Symptom[];
   /** Previous days, newest first. */
   history: readonly CheckRecord[];
+  /**
+   * Indicators whose value is in doubt (CL4, D33): their level is `in_doubt`, whatever the value.
+   * Absent or empty means no indicator is in doubt.
+   */
+  inDoubt?: readonly Indicator[];
   /**
    * Display text of a sensor's primary observation (`undefined` when missing). The rules layer
    * has no UI text: the caller supplies the words and units.
@@ -96,6 +111,9 @@ function partFor(
       observation,
     };
   }
+  if (input.inDoubt?.includes(indicator)) {
+    return { indicator, level: 'in_doubt', fever: false, observed: true, teamCriterion: false, observation };
+  }
   const result: LevelResult = levelFor(indicator, observation.value, {
     history: historyValues(input.history, indicator),
     symptoms: input.symptoms,
@@ -117,12 +135,16 @@ function partFor(
 
 /**
  * Reading of one sensor: its worst indicator sets the level, the reason and the team-criterion
- * flag. Green has no reason and is never a team criterion (nothing set it).
+ * flag. Green has no reason and is never a team criterion (nothing set it), except when the value
+ * is outside the personal normal (RN3): the sensor then shows amber with the team-criterion mark
+ * and its primary indicator as reason. The verdict counts outcomes, not readings, so this does not
+ * change it.
  */
 function readingFor(
   sensor: SensorKey,
   parts: readonly IndicatorPart[],
   latest: ReadonlyMap<Indicator, Observation>,
+  outsideNormal: boolean,
   input: EvaluateInput,
 ): SensorReading {
   const worst = parts.reduce((a, b) => (LEVEL_RANK[b.level] < LEVEL_RANK[a.level] ? b : a));
@@ -130,16 +152,41 @@ function readingFor(
     worst.level === 'in_doubt' ? 'in_doubt' : parts.some((part) => part.observed) ? 'confirmed' : 'idle';
   const green = worst.level === 'green';
   const primary = PRIMARY_INDICATOR[sensor];
+  if (green && outsideNormal) {
+    return {
+      sensor,
+      level: 'amber',
+      phase,
+      value: input.formatValue(primary, latest.get(primary)),
+      outsideNormal,
+      teamCriterion: true,
+      reason: primary,
+    };
+  }
   return {
     sensor,
     level: worst.level,
     phase,
     value: input.formatValue(primary, latest.get(primary)),
-    // US4 (personal baseline) is not implemented yet.
-    outsideNormal: false,
+    outsideNormal,
     teamCriterion: green ? false : worst.teamCriterion,
     reason: green ? null : worst.indicator,
   };
+}
+
+/**
+ * RN3: whether the current value of one baseline indicator is outside its personal normal. The
+ * last 3 values are today's and the two previous consecutive days' (newest first).
+ */
+function outsideNormalOf(
+  indicator: BaselineIndicator,
+  latest: ReadonlyMap<Indicator, Observation>,
+  history: readonly CheckRecord[],
+): boolean {
+  const current = baselineValue(latest.get(carrierOf(indicator)), indicator);
+  if (current === undefined) return false;
+  const last3 = [current, ...consecutiveValues(history, indicator).slice(0, OUTSIDE_NORMAL_READINGS - 1)];
+  return isOutsideNormal(indicator, last3, computeBaseline(history, indicator));
 }
 
 /**
@@ -156,15 +203,17 @@ export function evaluateCheck(input: EvaluateInput): EvaluateResult {
   for (const sensor of SensorKey.options) {
     const indicators: readonly Indicator[] = SENSOR_INDICATORS[sensor];
     const parts = indicators.map((indicator) => partFor(indicator, latest.get(indicator), input));
-    readings[sensor] = readingFor(sensor, parts, latest, input);
+    const outsideNormal = indicators.some((indicator) =>
+      baselineIndicatorsOf(indicator).some((baseline) => outsideNormalOf(baseline, latest, input.history)),
+    );
+    readings[sensor] = readingFor(sensor, parts, latest, outsideNormal, input);
     outcomes.push(...parts);
   }
 
   const { verdict, actionKey, actionTeamCriterion } = decideVerdict({
     outcomes,
     symptoms: input.symptoms,
-    // US4 (personal baseline) is not implemented yet.
-    outsideNormal: false,
+    outsideNormal: SensorKey.options.some((sensor) => readings[sensor].outsideNormal),
   });
   // A sensor with no reading is `unknown` (CL2); the first one names the missing data.
   const missingSensor =

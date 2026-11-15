@@ -22,6 +22,7 @@ import type {
   StepId,
   StepKind,
 } from './types';
+import { needsMoodReask, settleMoodReask } from './moodReask';
 
 /** A voice value as parsed: pending until confirmed, then part of `confirmedVoice`. */
 export interface VoiceValue {
@@ -59,6 +60,12 @@ export interface CheckinState {
   outcome: CheckinOutcome | null;
   /** Summary lines still to be spoken; the summary step advances after the last one. */
   pendingSpeech: number;
+  /** The pulse read said it is outside "tu normal" (CL4). Set by the pulse read, read when measuring ends. */
+  pulseOutsideNormal: boolean;
+  /** The mood was asked once more (CL4). The re-ask happens at most once per check-in. */
+  moodReasked: boolean;
+  /** Indicators whose value is in doubt; 'mood' when the re-asked mood equals the first one (CL4). */
+  inDoubt: Indicator[];
 }
 
 export interface CheckinTransition {
@@ -92,6 +99,9 @@ export function createCheckinState(input: { script: CheckinScript }): CheckinSta
     symptoms: [],
     outcome: null,
     pendingSpeech: 0,
+    pulseOutsideNormal: false,
+    moodReasked: false,
+    inDoubt: [],
   };
 }
 
@@ -105,7 +115,7 @@ export function checkinReducer(state: CheckinState, event: CheckinEvent): Checki
     case 'buttonAnswer':
       return transcript(state, event.text);
     case 'devicesRead':
-      return devicesRead(state, event.observations);
+      return devicesRead(state, event);
     case 'evaluated':
       return evaluated(state, event.result);
     case 'saved':
@@ -364,18 +374,52 @@ function intent(state: CheckinState, step: CheckinStep, name: Intent): CheckinTr
   }
 }
 
-/** "sí" at a confirm step: the pending value is confirmed and the flow moves on (RF4). */
+/**
+ * "sí" at a confirm step: the pending value is confirmed and the flow moves on (RF4). After the CL4
+ * re-ask the mood settles instead, and the check goes to evaluation (no ask_symptoms again).
+ */
 function confirmPending(state: CheckinState, step: CheckinStep): CheckinTransition {
   const { pending } = state;
   if (pending === null) {
     return relisten(state, step);
   }
+  if (state.moodReasked && step.id === 'confirm_mood') {
+    const settled = settleMoodReask(state.confirmedVoice, pending);
+    const inDoubt = settled.inDoubt ? [...state.inDoubt, 'mood' as const] : state.inDoubt;
+    return toEvaluation({ ...state, pending: null, confirmedVoice: settled.confirmedVoice, inDoubt });
+  }
   return advance({ ...state, pending: null, confirmedVoice: [...state.confirmedVoice, pending] });
 }
 
-/** "no" at a confirm step: the pending value is dropped and the ask step before it runs again. */
+/**
+ * "no" at a confirm step: the pending value is dropped and the ask step before it runs again. After
+ * the CL4 re-ask, "no" asks the mood again with the same gentle words; that is not a second re-ask.
+ */
 function backToAsk(state: CheckinState): CheckinTransition {
-  return enterAt({ ...state, pending: null }, stepIndex(state) - 1);
+  const cleared = { ...state, pending: null };
+  if (state.moodReasked && state.step === 'confirm_mood') {
+    return reaskMood(cleared);
+  }
+  return enterAt(cleared, stepIndex(state) - 1);
+}
+
+/** The pulse was outside normal and the mood is ≥ 4: the mood is asked once more (CL4, D33). */
+function reaskMood(state: CheckinState): CheckinTransition {
+  const step = state.script.find((candidate) => candidate.id === 'ask_mood');
+  if (step === undefined) {
+    return toEvaluation(state);
+  }
+  // CA3: the forehead (sleep) is highlighted while Vita asks about the mood, so the focus comes first.
+  const focus = step.focus === undefined ? [] : [setFocus(step.focus)];
+  return {
+    state: { ...state, step: 'ask_mood', moodReasked: true },
+    effects: [...focus, speak('ask.mood.again'), listen(grammarOf(step))],
+  };
+}
+
+/** Evaluation is next: the reducer's `evaluate` effect runs the verdict rules with the state. */
+function toEvaluation(state: CheckinState): CheckinTransition {
+  return { state: { ...state, step: 'evaluating' }, effects: [{ type: 'evaluate' }] };
 }
 
 function relisten(state: CheckinState, step: CheckinStep): CheckinTransition {
@@ -394,31 +438,42 @@ function needsTemperatureReread(state: CheckinState, observations: Observation[]
   );
 }
 
-function devicesRead(state: CheckinState, observations: Observation[]): CheckinTransition {
+function devicesRead(
+  state: CheckinState,
+  event: Extract<CheckinEvent, { type: 'devicesRead' }>,
+): CheckinTransition {
   const step = currentStep(state);
   if (step === undefined || step.kind !== 'measure') {
     return unchanged(state);
   }
-  if (needsTemperatureReread(state, observations)) {
+  const { observations } = event;
+  // Only the pulse read carries the flag; the other reads keep the value the pulse read set.
+  const withPulse = { ...state, pulseOutsideNormal: event.pulseOutsideNormal ?? state.pulseOutsideNormal };
+  if (needsTemperatureReread(withPulse, observations)) {
     // The first value is kept until the second read replaces it; the stage does not advance.
+    // Vita says why the thermometer is used again, so the chat shows the extra read.
     const reread = {
-      ...state,
-      confirmed: [...state.confirmed, ...observations],
-      remeasured: [...state.remeasured, 'body_temperature' as const],
+      ...withPulse,
+      confirmed: [...withPulse.confirmed, ...observations],
+      remeasured: [...withPulse.remeasured, 'body_temperature' as const],
     };
-    return { state: reread, effects: readStage(state.deviceIndex) };
+    return { state: reread, effects: [speak('measure.temperature.again'), ...readStage(withPulse.deviceIndex)] };
   }
   // The second read of a re-measured temperature replaces the first observation.
-  const replacing = state.remeasured.includes('body_temperature');
+  const replacing = withPulse.remeasured.includes('body_temperature');
   const kept = replacing
-    ? state.confirmed.filter((o) => o.indicator !== 'body_temperature')
-    : state.confirmed;
-  const deviceIndex = state.deviceIndex + 1;
-  const next = { ...state, confirmed: [...kept, ...observations], deviceIndex };
+    ? withPulse.confirmed.filter((o) => o.indicator !== 'body_temperature')
+    : withPulse.confirmed;
+  const deviceIndex = withPulse.deviceIndex + 1;
+  const next = { ...withPulse, confirmed: [...kept, ...observations], deviceIndex };
   if (deviceIndex < DEVICE_SEQUENCE.length) {
     return { state: next, effects: readStage(deviceIndex) };
   }
-  return { state: { ...next, step: 'evaluating' }, effects: [{ type: 'evaluate' }] };
+  // Measuring is done: the CL4 mood re-ask comes first when it applies, otherwise evaluation.
+  if (needsMoodReask(next)) {
+    return reaskMood(next);
+  }
+  return toEvaluation(next);
 }
 
 function evaluated(state: CheckinState, result: CheckinOutcome): CheckinTransition {

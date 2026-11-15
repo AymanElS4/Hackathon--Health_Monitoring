@@ -40,13 +40,9 @@ function inBand(value: number, band: RangeBand): boolean {
   );
 }
 
-/** RN1: a red band below a bound (pulse < 50) is red only with a symptom. Above 110 it is not. */
+/** RN1: a red band marked `requiresSymptoms` (pulse < 50) is red only with a symptom. */
 function needsSymptom(entry: Threshold): boolean {
-  return (
-    entry.indicator === 'resting_heart_rate' &&
-    entry.red.max !== undefined &&
-    entry.red.min === undefined
-  );
+  return entry.requiresSymptoms === true;
 }
 
 /** RN1 / RN2: a red band with `consecutiveForRed` needs the same band on the previous days. */

@@ -34,7 +34,7 @@ describe('formatReadingValue', () => {
   it('formats blood pressure as systolic/diastolic', () => {
     expect(
       formatReadingValue('blood_pressure', observe('blood_pressure', { systolic: 118, diastolic: 76 })),
-    ).toBe('118/76');
+    ).toBe('118/76 mmHg');
   });
 
   it('shows the dash when there is no observation', () => {
