@@ -451,12 +451,13 @@ function devicesRead(
   const withPulse = { ...state, pulseOutsideNormal: event.pulseOutsideNormal ?? state.pulseOutsideNormal };
   if (needsTemperatureReread(withPulse, observations)) {
     // The first value is kept until the second read replaces it; the stage does not advance.
+    // Vita says why the thermometer is used again, so the chat shows the extra read.
     const reread = {
       ...withPulse,
       confirmed: [...withPulse.confirmed, ...observations],
       remeasured: [...withPulse.remeasured, 'body_temperature' as const],
     };
-    return { state: reread, effects: readStage(withPulse.deviceIndex) };
+    return { state: reread, effects: [speak('measure.temperature.again'), ...readStage(withPulse.deviceIndex)] };
   }
   // The second read of a re-measured temperature replaces the first observation.
   const replacing = withPulse.remeasured.includes('body_temperature');

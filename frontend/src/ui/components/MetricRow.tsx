@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Gauge, Heart, Moon, Thermometer, Wind, type LucideIcon } from 'lucide-react';
-import type { Level, SensorKey, Source } from '@base-vital/contracts';
+import type { Indicator, Level, SensorKey, Source } from '@base-vital/contracts';
+import { SENSOR_INDICATOR } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { Badge } from './Badge';
 import { RangeBar } from './RangeBar';
@@ -17,6 +18,11 @@ export interface MetricRowProps {
   badge?: ReactNode;
   /** Level of the reading; when set (and no `badge` is given) the row shows its Badge. */
   level?: Level;
+  /**
+   * Indicator that set the level. When it is not the row's own indicator (e.g. mood on the sleep
+   * row), the Badge names it: "Ánimo: atención*", so the row does not read as a sleep problem.
+   */
+  reason?: Indicator | null;
   /** Adds the team criterion mark ("*") to the Badge. */
   teamCriterion?: boolean;
   /** Where the value came from. */
@@ -54,6 +60,15 @@ const SENSOR_CLASSES: Record<SensorKey, { circle: string; icon: string }> = {
 };
 
 /**
+ * Badge text of a row: the level's verdict word, or "{reason}: {level}" (e.g. "Ánimo: atención") when
+ * another indicator than the sensor's own set the level, so the row does not read as a sleep problem.
+ */
+function badgeTextOf(sensor: SensorKey, level: Level, reason: Indicator | null | undefined): string {
+  if (reason === undefined || reason === null || reason === SENSOR_INDICATOR[sensor]) return levelBadgeText(level);
+  return t('metric.reasonBadge', { reason: t(`indicator.${reason}`), level: t(`level.${level}`) });
+}
+
+/**
  * One sensor row of "Estado de Ana": sensor icon in a 28 px circle tinted with the sensor color,
  * the name (with the "equipo simulado" note for simulated device values), the value in neutral ink
  * with its unit, and the badge. The value is "—" with no badge when there is no reading. With a
@@ -66,6 +81,7 @@ export function MetricRow({
   unit,
   badge,
   level,
+  reason,
   teamCriterion = false,
   source,
   simulated = false,
@@ -81,7 +97,12 @@ export function MetricRow({
   const showDeviceNote = source === 'device' && simulated;
   const valueLabel = hasValue ? (unit !== undefined ? `${value} ${unit}` : value) : '';
   const slot =
-    badge ?? (level === undefined ? null : <Badge level={level} mark={teamCriterion}>{levelBadgeText(level)}</Badge>);
+    badge ??
+    (level === undefined ? null : (
+      <Badge level={level} mark={teamCriterion}>
+        {badgeTextOf(sensor, level, reason)}
+      </Badge>
+    ));
 
   return (
     <li

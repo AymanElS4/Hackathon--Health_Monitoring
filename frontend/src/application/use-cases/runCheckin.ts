@@ -25,9 +25,9 @@ import {
 } from './checkinEvaluation';
 import { buildCheckRecord, observationsOf } from './buildCheckRecord';
 import { withTimeout } from './withTimeout';
-import { readDeviceObservations } from './readDeviceObservations';
-import { pulseOutsideNormalOf } from './pulseOutsideNormal';
+import { readDevicesStep } from './readDevicesStep';
 import { priorChecksOf, type EvaluateHook } from './previousChecks';
+import { markCheckinEvent, type DevMetricsTap } from '../devMetrics';
 
 export type { CheckinSnapshotOutcome, NextItem } from './checkinEvaluation';
 export type { CheckinSnapshot, SpokenLine } from './checkinSnapshot';
@@ -44,6 +44,8 @@ export interface CheckinDeps {
   /** Verdict rules (US5); get the reducer state and the previous days' checks, newest first. */
   evaluate: EvaluateHook;
   script: CheckinScript;
+  /** Dev-only timing of the run (T095); omit it and nothing is measured. */
+  metrics?: DevMetricsTap;
 }
 
 export interface CheckinRunner {
@@ -73,7 +75,8 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
   let snapshot = buildSnapshot();
   let listenToken = 0;
   const subscribers = new Set<() => void>();
-  let disposed = false;
+  /** Set on dispose and on `saved`: the microphone is released and nothing may open it again. */
+  let closed = false;
 
   function buildSnapshot(): CheckinSnapshot {
     return {
@@ -110,7 +113,8 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
   }
 
   async function dispatch(event: CheckinEvent): Promise<void> {
-    if (disposed) return;
+    if (closed) return;
+    markCheckinEvent(deps.metrics, event);
     const wasPaused = state.paused;
     const transition = checkinReducer(state, event);
     state = transition.state;
@@ -121,18 +125,17 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
     } else {
       publish();
     }
+    if (event.type === 'saved') shutdown(); // the mic indicator must not stay on
     for (const effect of transition.effects) {
-      if (disposed) return;
+      if (closed) return;
       await run(effect);
     }
   }
 
-  function dispose(): void {
-    disposed = true;
-    listenToken += 1;
-    deps.recognizer.stop();
-    deps.synthesizer.cancel();
-  }
+  /** Releases the microphone; a listen in flight must not dispatch afterwards, nor a later one start. */
+  function shutdown(): void { closed = true; listenToken += 1; deps.recognizer.release(); }
+
+  function dispose(): void { shutdown(); deps.synthesizer.cancel(); }
 
   async function run(effect: Effect): Promise<void> {
     switch (effect.type) {
@@ -218,15 +221,12 @@ export function createCheckinRunner(deps: CheckinDeps): CheckinRunner {
    * "tu normal" (CL4), from the saved history; a history that cannot be read means no re-ask.
    */
   async function readDevices(indicators: readonly string[]): Promise<void> {
-    const observations = await readDeviceObservations(deps.devices, indicators);
-    const outside = indicators.includes('resting_heart_rate')
-      ? await pulseOutsideNormalOf(deps.repository, deps.clock, observations)
-      : undefined;
-    return dispatch({ type: 'devicesRead', observations, pulseOutsideNormal: outside });
+    return dispatch(await readDevicesStep(deps, indicators));
   }
 
   return {
-    start: () => dispatch({ type: 'start' }),
+    // A closed runner never opens the mic again (privacy over speed, D50); prepare never rejects.
+    start: () => (closed ? Promise.resolve() : (void deps.recognizer.prepare(), dispatch({ type: 'start' }))),
     dispatch,
     dispose,
     getSnapshot: () => snapshot,

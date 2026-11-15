@@ -33,6 +33,27 @@ export interface AudioContextHandle {
   createMediaStreamSource(stream: MediaStream): SourceNodeHandle;
   createScriptProcessor(bufferSize: number, inputs: number, outputs: number): ProcessorNodeHandle;
   close(): Promise<void>;
+  resume?(): Promise<void>;
+}
+interface AudioSession {
+  stream: MediaStream;
+  ctx: AudioContextHandle;
+  source: SourceNodeHandle;
+  node: ProcessorNodeHandle;
+}
+interface ActiveRecognizer {
+  handle: VoskRecognizerHandle;
+  onResult: ((text: string) => void) | null;
+  lastPartialAt: number | null;
+}
+
+/**
+ * Dev timing hooks (T095), on the adapter's `now` clock. `onListening` fires when the microphone is
+ * open; `onFinal` fires with the last partial result and the final one, when a transcript exists.
+ */
+export interface VoskTiming {
+  onListening(at: number): void;
+  onFinal(times: { lastPartialAt: number; finalAt: number }): void;
 }
 
 export interface VoskRecognizerOptions {
@@ -45,6 +66,7 @@ export interface VoskRecognizerOptions {
   getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream>;
   audioContextFactory?: () => AudioContextHandle;
   now?: () => number;
+  timing?: VoskTiming;
 }
 
 export class VoskRecognizer implements SpeechRecognizerPort {
@@ -55,8 +77,13 @@ export class VoskRecognizer implements SpeechRecognizerPort {
   private readonly getUserMedia: (c: MediaStreamConstraints) => Promise<MediaStream>;
   private readonly audioContextFactory: () => AudioContextHandle;
   private readonly now: () => number;
+  private readonly timing: VoskTiming | undefined;
   private modelPromise: Promise<VoskModelHandle> | null = null;
   private abort: (() => void) | null = null;
+  private generation = 0;
+  private session: Promise<AudioSession> | null = null;
+  private feed: VoskRecognizerHandle | null = null;
+  private readonly recognizers = new Set<ActiveRecognizer>();
 
   constructor(opts: VoskRecognizerOptions = {}) {
     // A root-relative URL would resolve against blob: inside vosk-browser's worker.
@@ -78,6 +105,7 @@ export class VoskRecognizer implements SpeechRecognizerPort {
       (() =>
         new AudioContext({ sampleRate: PREFERRED_SAMPLE_RATE }) as unknown as AudioContextHandle);
     this.now = opts.now ?? (() => performance.now());
+    this.timing = opts.timing;
   }
 
   /** Joins the model parts into a blob: URL, loads the model, then revokes the URL (also on failure). */
@@ -101,8 +129,80 @@ export class VoskRecognizer implements SpeechRecognizerPort {
     return this.modelPromise.then(() => undefined);
   }
 
+  async prepare(): Promise<void> {
+    try {
+      const generation = this.generation;
+      await this.preload();
+      // A release while the model loads cancels the warm-up (the microphone must stay closed).
+      if (generation === this.generation) await this.openSession();
+    } catch {
+      // A failed warm-up is not an error: `listen` retries and resolves null if it still fails.
+    }
+  }
+
+  /** Opens the microphone stream and the audio graph once; later listens reuse them until `release`. */
+  private openSession(): Promise<AudioSession> {
+    if (!this.session) {
+      const p = this.createSession();
+      this.session = p;
+      p.catch(() => {
+        if (this.session === p) this.session = null;
+      });
+    }
+    return this.session;
+  }
+
+  private async createSession(): Promise<AudioSession> {
+    const stream = await this.getUserMedia({
+      audio: { channelCount: CHANNEL_COUNT, echoCancellation: true, noiseSuppression: true },
+    });
+    let ctx: AudioContextHandle | null = null;
+    try {
+      ctx = this.audioContextFactory();
+      await ctx.resume?.();
+      const node = ctx.createScriptProcessor(SCRIPT_PROCESSOR_BUFFER_SIZE, CHANNEL_COUNT, CHANNEL_COUNT);
+      const source = ctx.createMediaStreamSource(stream);
+      // The graph stays connected; chunks only reach a recognizer while a listen is active.
+      node.onaudioprocess = (e) => {
+        const target = this.feed;
+        if (!target) return;
+        try { target.acceptWaveform(e.inputBuffer); } catch { /* drop bad chunk */ }
+      };
+      source.connect(node);
+      node.connect(ctx.destination);
+      return { stream, ctx, source, node };
+    } catch (err) {
+      stream.getTracks().forEach((t) => t.stop());
+      ctx?.close().catch(() => undefined);
+      throw err;
+    }
+  }
+
+  /**
+   * A new recognizer per listen. Reusing one would leak a half utterance, and flushing it replies
+   * asynchronously with a result that would land on the next listen. `discard` unregisters it first.
+   */
+  private recognizerFor(model: VoskModelHandle, ctx: AudioContextHandle, grammar: readonly string[]): ActiveRecognizer {
+    const key = JSON.stringify(grammar);
+    const handle = new model.KaldiRecognizer(ctx.sampleRate, key);
+    const entry: ActiveRecognizer = { handle, onResult: null, lastPartialAt: null };
+    handle.on('partialresult', () => { entry.lastPartialAt = this.now(); });
+    handle.on('result', (message) => {
+      const finalAt = this.now();
+      if (entry.lastPartialAt !== null) this.timing?.onFinal({ lastPartialAt: entry.lastPartialAt, finalAt });
+      if (import.meta.env.DEV && entry.lastPartialAt !== null) {
+        console.debug(`[vosk] last partial -> final: ${Math.round(finalAt - entry.lastPartialAt)} ms`);
+      }
+      entry.lastPartialAt = null;
+      entry.onResult?.((message?.result?.text ?? '').trim());
+    });
+    this.recognizers.add(entry);
+    return entry;
+  }
+
   async listen(grammar: readonly string[], opts: { timeoutMs: number }): Promise<string | null> {
     this.stop();
+    const generation = this.generation;
     let model: VoskModelHandle;
     try {
       await this.preload();
@@ -112,31 +212,26 @@ export class VoskRecognizer implements SpeechRecognizerPort {
       await new Promise<void>((r) => setTimeout(r, opts.timeoutMs));
       return null;
     }
+    // A release while the model loaded: never open the microphone for this stale listen.
+    if (generation !== this.generation) return null;
 
     let finished = false;
     let resolveOut!: (v: string | null) => void;
     const result = new Promise<string | null>((r) => (resolveOut = r));
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let stream: MediaStream | null = null;
-    let ctx: AudioContextHandle | null = null;
-    let source: SourceNodeHandle | null = null;
-    let node: ProcessorNodeHandle | null = null;
-    let recognizer: VoskRecognizerHandle | null = null;
+    let entry: ActiveRecognizer | null = null;
 
-    const cleanup = (): void => {
-      if (timer !== null) clearTimeout(timer);
-      if (node) node.onaudioprocess = null;
-      try { source?.disconnect(); } catch { /* already disconnected */ }
-      try { node?.disconnect(); } catch { /* already disconnected */ }
-      stream?.getTracks().forEach((t) => t.stop());
-      ctx?.close().catch(() => undefined);
-      try { recognizer?.remove(); } catch { /* already removed */ }
-      if (this.abort === abort) this.abort = null;
-    };
     const finish = (value: string | null): void => {
       if (finished) return;
       finished = true;
-      cleanup();
+      if (timer !== null) clearTimeout(timer);
+      if (entry) {
+        entry.onResult = null;
+        if (this.feed === entry.handle) this.feed = null;
+        // Never reused: removing it unregisters its events, so no late result reaches a later listen.
+        this.discard(entry);
+      }
+      if (this.abort === abort) this.abort = null;
       resolveOut(value);
     };
     const abort = (): void => finish(null);
@@ -144,34 +239,50 @@ export class VoskRecognizer implements SpeechRecognizerPort {
     timer = setTimeout(abort, opts.timeoutMs);
 
     try {
-      stream = await this.getUserMedia({
-        audio: { channelCount: CHANNEL_COUNT, echoCancellation: true, noiseSuppression: true },
-      });
-      if (finished) { cleanup(); return result; }
-      ctx = this.audioContextFactory();
-      recognizer = new model.KaldiRecognizer(ctx.sampleRate, JSON.stringify(grammar));
-      let lastPartialAt: number | null = null;
-      recognizer.on('partialresult', () => { lastPartialAt = this.now(); });
-      recognizer.on('result', (message) => {
-        const text: string = (message?.result?.text ?? '').trim();
-        if (import.meta.env.DEV && lastPartialAt !== null) {
-          console.debug(`[vosk] last partial -> final: ${Math.round(this.now() - lastPartialAt)} ms`);
-        }
-        if (text === '' || text === UNKNOWN_TOKEN) finish(null);
-        else finish(text);
-      });
-      node = ctx.createScriptProcessor(SCRIPT_PROCESSOR_BUFFER_SIZE, CHANNEL_COUNT, CHANNEL_COUNT);
-      const rec = recognizer;
-      node.onaudioprocess = (e) => {
-        try { rec.acceptWaveform(e.inputBuffer); } catch { /* drop bad chunk */ }
+      const session = await this.openSession();
+      if (generation !== this.generation) {
+        // Released while the microphone opened: release() already closed the session it saw, and a
+        // newer listen may own the current one, so only end this listen.
+        finish(null);
+        return result;
+      }
+      if (finished) return result;
+      entry = this.recognizerFor(model, session.ctx, grammar);
+      const current = entry;
+      current.lastPartialAt = null;
+      current.onResult = (text) => {
+        finish(text === '' || text === UNKNOWN_TOKEN ? null : text);
       };
-      source = ctx.createMediaStreamSource(stream);
-      source.connect(node);
-      node.connect(ctx.destination);
+      this.feed = current.handle;
+      this.timing?.onListening(this.now());
     } catch {
       finish(null);
     }
     return result;
+  }
+
+  private discard(entry: ActiveRecognizer): void {
+    this.recognizers.delete(entry);
+    try { entry.handle.remove(); } catch { /* already removed */ }
+  }
+
+  /** Closes the microphone and the audio graph, and drops the cached recognizers. A later listen reopens. */
+  release(): void {
+    this.generation += 1;
+    this.stop();
+    const pending = this.session;
+    this.session = null;
+    this.feed = null;
+    for (const entry of [...this.recognizers]) this.discard(entry);
+    void pending?.then((s) => this.closeSession(s), () => undefined);
+  }
+
+  private closeSession(s: AudioSession): void {
+    s.node.onaudioprocess = null;
+    try { s.source.disconnect(); } catch { /* already disconnected */ }
+    try { s.node.disconnect(); } catch { /* already disconnected */ }
+    s.stream.getTracks().forEach((t) => t.stop());
+    s.ctx.close().catch(() => undefined);
   }
 
   stop(): void {

@@ -185,3 +185,24 @@ export const BODY_FALLBACK_SIZE = { width: 600, height: 900 } as const;
 
 /** How long the 3D body may take to load before the fallback image replaces it (ms). */
 export const BODY_LOAD_TIMEOUT_MS = 3000;
+
+/** Milliseconds in one second. */
+export const MS_PER_SECOND = 1000;
+
+/**
+ * Performance targets of the dev metrics overlay (T095, plan.md "Performance Goals"). Times are ms;
+ * `fps` is the frame rate of the 3D canvas. Not health thresholds, so they live here, not in libs.
+ */
+export const DEV_TARGETS = {
+  /** Start tap to `saved`: one daily check-in (SC-001, CA1). */
+  checkinMs: 60_000,
+  /** Prompt end to microphone open (plan.md: voice start ≤ 300 ms after the prompt). */
+  voiceStartMs: 300,
+  /** End of speech (last partial) to the final transcript (plan.md: ≤ 800 ms). */
+  finalTranscriptMs: 800,
+  /** Lowest acceptable 3D frame rate (plan.md: ≥ 30 fps). */
+  fps: 30,
+} as const;
+
+/** Window over which the 3D frame-rate meter averages its frames (ms). */
+export const FPS_WINDOW_MS = 1000;

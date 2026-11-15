@@ -40,6 +40,7 @@ export function MetricRows({ readings, focus, onSelect }: MetricRowsProps) {
             sensor={sensor}
             value={reading?.value}
             level={reading?.level}
+            reason={reading?.reason}
             teamCriterion={reading?.teamCriterion}
             source={reading?.source ?? undefined}
             simulated={reading?.simulated}

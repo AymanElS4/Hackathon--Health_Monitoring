@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import { Pause } from 'lucide-react';
 import type { CheckRecord } from '@base-vital/contracts';
@@ -12,6 +12,7 @@ import { useCheckin } from '../useCheckin';
 import { useConversation } from '../useConversation';
 import type { ChatMessage } from '../conversation';
 import { usePrefersReducedMotion } from '../body3d/usePrefersReducedMotion';
+import { devMetricsVisible } from '../dev/devMetricsVisible';
 import { LazyBodyViewer } from '../body3d/LazyBodyViewer';
 import { BigButtons } from '../components/BigButtons';
 import { Button } from '../components/Button';
@@ -30,6 +31,11 @@ import { needsTeamNote } from '../teamNote';
 interface CheckinLocationState {
   autostart?: boolean;
 }
+
+/** Dev-only metrics overlay (T095): its own chunk, so the demo does not load it. */
+const DevMetricsOverlay = lazy(() =>
+  import('../dev/DevMetricsOverlay').then((module) => ({ default: module.DevMetricsOverlay })),
+);
 
 /** Steps whose answer is one of a few quick replies under Vita's last message (T080a). */
 const CHIP_STEPS: ReadonlySet<CheckinSnapshot['step']> = new Set<CheckinSnapshot['step']>([
@@ -110,6 +116,11 @@ export function CheckIn() {
   const { snapshot, bodyView, start, pause, resume, repeat, answerButton, answer, fakeListening } = useCheckin();
   const messages = useConversation(snapshot);
   const services = useAppServices();
+  // The recorder only when the overlay is on (dev server or ?dev=metrics); otherwise nothing is shown.
+  const devMetrics =
+    services.devMetrics !== undefined && devMetricsVisible(location.search, import.meta.env.DEV)
+      ? services.devMetrics
+      : undefined;
   const hasOutcome = snapshot.outcome !== null;
   /** Previous days' checks, for the "tu normal" marks of the summary rows; loaded once the verdict is known. */
   const [previousChecks, setPreviousChecks] = useState<CheckRecord[]>([]);
@@ -268,12 +279,18 @@ export function CheckIn() {
             focus={bodyView.focus}
             measuring={bodyView.measuring}
             evaluated={bodyView.evaluated}
+            onFrameRate={devMetrics?.markFps}
           />
           {bodyView.focus !== null && (
             <p className="text-body font-semibold text-ink">{t(`sensor.${bodyView.focus}`)}</p>
           )}
         </div>
       </div>
+      {devMetrics !== undefined && (
+        <Suspense fallback={null}>
+          <DevMetricsOverlay recorder={devMetrics} />
+        </Suspense>
+      )}
     </main>
   );
 }
