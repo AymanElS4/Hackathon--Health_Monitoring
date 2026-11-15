@@ -214,8 +214,8 @@ que el aviso sale de la cola y la decisión queda en el resumen.
   seudónimos `crew-` más 6 letras o números.
 - **FR-014**: Ningún texto del servidor ni de la vista del cirujano da un diagnóstico ni recomienda
   medicación (Principio VI).
-- **FR-015**: Las listas de valores permitidos del servidor (veredicto, indicador, nivel, origen,
-  síntoma) deben coincidir con las del contrato compartido; una prueba lo comprueba.
+- **FR-015**: Las listas de valores permitidos del servidor (veredicto, indicador, origen, síntoma;
+  el nivel vive solo en la foto de lecturas, M9) deben coincidir con las del contrato compartido; una prueba lo comprueba.
 - **FR-016**: Para la demo, un paso opcional carga 14 días simulados del tripulante de ejemplo
   `crew-a1b2c3` (inicio de misión 2026-10-24), marcados "simulado".
 - **FR-017**: La vista del cirujano debe poder abrirse desde un navegador en otra red usando la

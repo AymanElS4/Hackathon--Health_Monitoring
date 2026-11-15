@@ -1,0 +1,8 @@
+# BuildKit per-Dockerfile ignore file for backend/Dockerfile (build context = repo root).
+**/node_modules
+**/dist
+frontend
+.git
+**/.env*
+specs
+docs

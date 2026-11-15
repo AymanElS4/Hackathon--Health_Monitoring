@@ -1,0 +1,84 @@
+# Base Vital - local stack for the surgeon sync service (spec 004).
+#
+# Security model:
+# - Only cloudflared exposes anything to the internet (an outbound Quick Tunnel to Cloudflare).
+# - Every port published to the host binds to 127.0.0.1, so nothing is reachable from the LAN.
+# - Postgres is published only on loopback (for local inspection); the backend reaches it over the
+#   compose network.
+#
+# Setup: copy .env.example to .env and fill in the required variables. Never commit .env.
+# Host ports can be overridden (for example, if 3000/5432/4173 are already in use) with
+# BACKEND_HOST_PORT, POSTGRES_HOST_PORT and FRONTEND_HOST_PORT.
+
+name: base-vital
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
+      SURGEON_ACCESS_CODE: ${SURGEON_ACCESS_CODE:?set SURGEON_ACCESS_CODE in .env}
+      SYNC_CODE: ${SYNC_CODE:?set SYNC_CODE in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://base-vital.pages.dev}
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      start_period: 20s
+      retries: 5
+
+  # The frontend is built inside the image from the repo root, not from a Dockerfile in frontend/,
+  # so no file under frontend/ changes. The offline PWA shell is served here; M10 (spec 004) and
+  # 005 FR-006 require this service.
+  frontend:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:24-alpine
+        WORKDIR /app
+        COPY package.json package-lock.json tsconfig.base.json ./
+        COPY libs libs
+        COPY frontend frontend
+        RUN rm -rf frontend/node_modules libs/*/node_modules && npm ci --no-audit --no-fund
+        RUN npm run build -w @base-vital/frontend
+        WORKDIR /app/frontend
+        CMD ["npx","vite","preview","--host","0.0.0.0","--port","4173","--strictPort"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-4173}:4173"
+
+  # The temporary https address (*.trycloudflare.com) is printed in `docker compose logs cloudflared`.
+  # Pinned tag, never `latest`.
+  cloudflared:
+    image: cloudflare/cloudflared:2025.11.1
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://backend:3000
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata: {}

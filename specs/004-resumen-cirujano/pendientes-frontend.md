@@ -27,4 +27,5 @@ finish it end to end.
    `cd backend && npm test`).
 8. `.gitignore`: `.env*` also ignores `.env.example`; add `!.env.example` (the file was added with
    `git add -f`).
-9. Optional `.dockerignore` at the root (the backend uses `backend/Dockerfile.dockerignore`).
+9. Optional `.dockerignore` at the root (the backend uses `backend/Dockerfile.dockerignore`) — it would also keep host node_modules out of the frontend image build context.
+10. `.eslintrc.cjs`: declare backend layers as `eslint-plugin-boundaries` elements (`backend/src/application/ports/**`, `application/**`, `adapters/**`, `config/**`, `shared/**`, composition `app.module.ts`/`main.ts`) and add `backend/src/app.module.ts` to the adapter-instantiation rule's `excludedFiles`. Today `backend/.eslintrc.cjs` enforces the two key rules locally.
