@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import {
   Activity,
   ArrowLeft,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Database,
   Droplet,
@@ -45,9 +46,181 @@ const CLINICAL_PROTOCOLS: readonly ProtocolDef[] = [
 
 const range = (count: number): number[] => Array.from({ length: count }, (_, i) => i + 1);
 
+const DESKTOP_QUERY = '(min-width: 768px)';
+
+/** True at >= 768 px. Without `matchMedia` (jsdom) it is true, i.e. the full desktop rendering. */
+function useIsDesktop(): boolean {
+  const read = (): boolean =>
+    typeof window === 'undefined' || typeof window.matchMedia !== 'function'
+      ? true
+      : window.matchMedia(DESKTOP_QUERY).matches;
+  const [desktop, setDesktop] = useState<boolean>(read);
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    const mql = window.matchMedia(DESKTOP_QUERY);
+    const onChange = () => setDesktop(mql.matches);
+    onChange();
+    mql.addEventListener?.('change', onChange);
+    return () => mql.removeEventListener?.('change', onChange);
+  }, []);
+  return desktop;
+}
+
+/** Paragraph clamped to 3 lines with a "More"/"Less" toggle. */
+function Clamped({ text, className }: { text: string; className: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <p className={`${className} ${expanded ? '' : 'line-clamp-3'}`}>{text}</p>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded(!expanded)}
+        className="min-h-touch text-xs font-semibold text-primary"
+      >
+        {t(expanded ? 'guide.less' : 'guide.more')}
+      </button>
+    </div>
+  );
+}
+
+/** Small section toggle used inside an open mobile card. */
+function SectionToggle({ name, children }: { name: 'equipment' | 'restrictions' | 'closure'; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="flex min-h-touch items-center justify-between rounded-lg bg-slate-50 px-3 text-xs font-semibold text-slate-700"
+      >
+        {t(`guide.toggle.${name}.${open ? 'hide' : 'show'}`)}
+        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
+function MobileProtocol({ proto, open, onToggle }: { proto: ProtocolDef; open: boolean; onToggle: () => void }) {
+  const Icon = proto.icon;
+  const id = `guide.${proto.id}`;
+  const hasNoGo = proto.restrictions.some(Boolean);
+  const panelId = `panel-${proto.id}`;
+  return (
+    <Card className="flex min-w-0 flex-col !p-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="flex min-h-[56px] w-full items-center gap-3 p-3 text-left"
+      >
+        <Icon className="h-5 w-5 shrink-0 text-blue-600" />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="font-mono text-[10px] font-bold text-slate-500">{proto.code}</span>
+          <span className="text-sm font-bold leading-tight text-slate-800">{t(`${id}.title`)}</span>
+          <span className="flex items-center gap-1 text-xs text-slate-500">
+            <Clock className="h-3 w-3 shrink-0" />
+            {t(`${id}.duration`)}
+          </span>
+        </span>
+        <span
+          className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-extrabold uppercase text-white ${
+            hasNoGo ? 'bg-rose-600' : 'bg-emerald-600'
+          }`}
+        >
+          {hasNoGo ? t('guide.flag.nogo') : t('guide.flag.go')}
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div id={panelId} className="flex min-w-0 flex-col gap-3 border-t border-slate-100 p-3">
+          <Clamped text={t(`${id}.objective`)} className="text-xs leading-relaxed text-slate-700" />
+
+          <ol className="flex flex-col gap-2">
+            {proto.sop.map((hasTime, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                  {idx + 1}
+                </span>
+                <div className="min-w-0 text-xs text-slate-600">
+                  <span className="font-bold text-slate-800">{t(`${id}.sop.${idx + 1}.phase`)}</span>
+                  {hasTime && (
+                    <span className="ml-1.5 rounded bg-blue-50 px-1.5 py-0.5 font-mono text-[10px] text-blue-700">
+                      {t(`${id}.sop.${idx + 1}.time`)}
+                    </span>
+                  )}
+                  <Clamped text={t(`${id}.sop.${idx + 1}.action`)} className="leading-relaxed" />
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <SectionToggle name="equipment">
+            <ul className="flex flex-col gap-1.5 text-xs text-slate-700">
+              {range(proto.equipmentCount).map((n) => (
+                <li key={n} className="flex items-start gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
+                  <span className="min-w-0">{t(`${id}.equipment.${n}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </SectionToggle>
+
+          <SectionToggle name="restrictions">
+            <div className="flex flex-col gap-1.5">
+              {proto.restrictions.map((isNoGo, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-start gap-2 rounded-lg border p-2 text-xs ${
+                    isNoGo ? 'border-rose-200 bg-rose-50/60 text-rose-800' : 'border-emerald-200 bg-emerald-50/60 text-emerald-800'
+                  }`}
+                >
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-white ${
+                      isNoGo ? 'bg-rose-600' : 'bg-emerald-600'
+                    }`}
+                  >
+                    {isNoGo ? t('guide.flag.nogo') : t('guide.flag.go')}
+                  </span>
+                  <span className="min-w-0 font-medium leading-relaxed">{t(`${id}.restriction.${idx + 1}`)}</span>
+                </div>
+              ))}
+            </div>
+          </SectionToggle>
+
+          <SectionToggle name="closure">
+            <dl className="flex flex-col gap-2 text-xs">
+              {proto.hasSamples && (
+                <div>
+                  <dt className="font-semibold text-slate-800">{t('guide.closure.samples')}</dt>
+                  <dd className="text-slate-600">{t(`${id}.closure.samples`)}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="font-semibold text-slate-800">{t('guide.closure.hardware')}</dt>
+                <dd className="text-slate-600">{t(`${id}.closure.hardware`)}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-800">{t('guide.closure.data')}</dt>
+                <dd className="text-slate-600">{t(`${id}.closure.data`)}</dd>
+              </div>
+            </dl>
+          </SectionToggle>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function Guide() {
   const locale = useLocale();
   const history = useHistory();
+  const desktop = useIsDesktop();
+  const [openId, setOpenId] = useState<string | null>(null);
   const [selectedProtocolId, setSelectedProtocolId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -68,9 +241,9 @@ export function Guide() {
 
   return (
     <main className="min-h-screen bg-canvas" data-locale={locale}>
-      <div className="mx-auto flex max-w-content flex-col gap-xl px-4 pb-dockClearance pt-xl md:px-page">
+      <div className="mx-auto flex max-w-content flex-col gap-md px-4 pb-dockClearance pt-md md:gap-xl md:pt-xl md:px-page">
         {/* Official guide header */}
-        <header className="flex flex-col justify-between gap-md border-b border-slate-200 pb-5 md:flex-row md:items-center">
+        <header className="flex flex-col justify-between gap-md border-b border-slate-200 pb-3 md:pb-5 md:flex-row md:items-center">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
@@ -80,7 +253,7 @@ export function Guide() {
               <span className="text-xs text-slate-400">{t('guide.rev')}</span>
             </div>
             <h1 className="text-title font-bold text-ink mt-1">{t('guide.title')}</h1>
-            <p className="text-small text-ink-secondary">{t('guide.subtitle')}</p>
+            <p className="hidden text-small text-ink-secondary md:block">{t('guide.subtitle')}</p>
           </div>
 
           <Link
@@ -93,12 +266,12 @@ export function Guide() {
         </header>
 
         {/* Search and protocol tabs */}
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="sticky top-0 z-10 -mx-4 flex flex-col justify-between gap-2 bg-canvas px-4 py-2 md:static md:mx-0 md:flex-row md:items-center md:gap-4 md:bg-transparent md:p-0">
+          <div className="order-2 flex items-center gap-2 overflow-x-auto md:order-none md:flex-wrap md:overflow-visible">
             <button
               type="button"
               onClick={() => setSelectedProtocolId('all')}
-              className={`flex min-h-touch items-center justify-center px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors md:min-h-0 ${
+              className={`flex min-h-touch shrink-0 items-center justify-center whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors md:min-h-0 ${
                 selectedProtocolId === 'all'
                   ? 'bg-slate-800 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -113,7 +286,7 @@ export function Guide() {
                   type="button"
                   key={proto.id}
                   onClick={() => setSelectedProtocolId(proto.id)}
-                  className={`min-h-touch px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 md:min-h-0 ${
+                  className={`min-h-touch shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 md:min-h-0 ${
                     selectedProtocolId === proto.id
                       ? 'bg-slate-800 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -126,7 +299,7 @@ export function Guide() {
             })}
           </div>
 
-          <div className="relative w-full md:w-64">
+          <div className="relative order-1 w-full md:order-none md:w-64">
             <input
               type="text"
               value={searchQuery}
@@ -140,10 +313,20 @@ export function Guide() {
         </div>
 
         {/* Protocol list */}
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-3 md:gap-8">
           {filteredProtocols.map((proto) => {
             const Icon = proto.icon;
             const id = `guide.${proto.id}`;
+            if (!desktop) {
+              return (
+                <MobileProtocol
+                  key={proto.id}
+                  proto={proto}
+                  open={openId === proto.id}
+                  onToggle={() => setOpenId(openId === proto.id ? null : proto.id)}
+                />
+              );
+            }
             return (
               <Card key={proto.id} className="flex min-w-0 flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 md:flex-row md:items-center">

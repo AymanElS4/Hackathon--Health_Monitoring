@@ -237,3 +237,27 @@ export const DEV_TARGETS = {
 
 /** Window over which the 3D frame-rate meter averages its frames (ms). */
 export const FPS_WINDOW_MS = 1000;
+
+/**
+ * Health panel chart Y-axis ranges, [min, max] in the metric's unit. Display ranges only, not
+ * thresholds: every reference line comes from `THRESHOLDS` (health-rules). Each range must contain
+ * the drawn lines (fever at 38 °C, pulse red at 111 bpm, systolic red at 140 mmHg).
+ */
+export const HEALTH_CHART_DOMAINS = {
+  sleep: [4, 11],
+  temperature: [35.5, 38.5],
+  heart: [45, 120],
+  pressure: [60, 150],
+} as const satisfies Record<string, readonly [number, number]>;
+
+/** Chart height (px) in the Health panel: shorter on mobile so one metric fits the first screen. */
+export const HEALTH_CHART_HEIGHT = { mobile: 180, desktop: 300 } as const;
+
+/** Media query of the desktop layout of the Health panel (Tailwind `md`). */
+export const DESKTOP_MEDIA_QUERY = '(min-width: 768px)';
+
+/** Decimals shown for temperature values in the Health panel (38,0 °C). */
+export const TEMPERATURE_FRACTION_DIGITS = 1;
+
+/** Bpm step: the pulse green band is half-open ([60, 101)), shown as 60 to 100. */
+export const BPM_STEP = 1;
