@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+.env*
+.DS_Store
+# Vosk model (~40 MB): download vosk-model-small-es-0.42.tar.gz from alphacephei.com/vosk/models
+public/models/vosk/*.tar.gz
