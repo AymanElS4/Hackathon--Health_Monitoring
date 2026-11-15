@@ -200,7 +200,6 @@ export const BODY_FALLBACK_SIZE = { width: 600, height: 900 } as const;
 /** How long the 3D body may take to load before the fallback image replaces it (ms). */
 export const BODY_LOAD_TIMEOUT_MS = 3000;
 
-<<<<<<< HEAD
 /** Paleta de colores para gráficos clínicos y dashboards. */
 export const CHART_COLORS = {
   grid: '#E2E8F0',
@@ -218,7 +217,6 @@ export const CHART_COLORS = {
   systolicLimit: '#D8B4FE',
 } as const;
 
-=======
 /** Milliseconds in one second. */
 export const MS_PER_SECOND = 1000;
 
@@ -239,4 +237,3 @@ export const DEV_TARGETS = {
 
 /** Window over which the 3D frame-rate meter averages its frames (ms). */
 export const FPS_WINDOW_MS = 1000;
->>>>>>> origin/main
