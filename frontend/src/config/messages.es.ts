@@ -6,8 +6,14 @@
  */
 import { getLocale } from './i18n';
 import { MESSAGES_EN } from './messages.en';
+import { GUIDE_ES } from './catalogs/guide.es';
+import { HEALTH_ES } from './catalogs/health.es';
+import { HISTORY_ES } from './catalogs/history.es';
 
 export const messages: Record<string, string> = {
+  ...GUIDE_ES,
+  ...HEALTH_ES,
+  ...HISTORY_ES,
   // Check-in script (contracts/checkin-script.md)
   greet: 'Buenos días, Ana. Chequeo diario.',
   'ask.sleep': '¿Cuántas horas dormiste?',

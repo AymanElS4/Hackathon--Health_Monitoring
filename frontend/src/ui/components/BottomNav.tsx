@@ -33,7 +33,7 @@ const RIGHT_TABS: readonly TabDef[] = [
   { key: 'guide', labelKey: 'nav.guide', icon: BookOpen },
 ];
 
-const TAB_LAYOUT = 'flex min-h-nav min-w-nav flex-1 flex-col items-center justify-center gap-xs text-meta';
+const TAB_LAYOUT = 'flex min-h-nav min-w-0 flex-1 md:min-w-nav flex-col items-center justify-center gap-xs text-meta';
 
 /** Floating bottom dock: Hoy · Salud · (Vita) · Agenda · Guía. */
 export function BottomNav({ active, onVita }: BottomNavProps) {
@@ -81,7 +81,7 @@ export function BottomNav({ active, onVita }: BottomNavProps) {
 
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-dock items-end rounded-t-dock bg-card px-sm pb-md pt-sm shadow-dock">
+    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full items-end rounded-t-dock bg-card px-xs max-w-dock md:px-sm pb-md pt-sm shadow-dock">
       {LEFT_TABS.map(renderTab)}
       <div className="flex flex-1 justify-center">
         <button type="button" onClick={onVita} className="group flex flex-col items-center gap-xs text-meta font-semibold text-primary">

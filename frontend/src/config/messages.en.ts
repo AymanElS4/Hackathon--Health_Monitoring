@@ -1,9 +1,15 @@
+import { GUIDE_EN } from './catalogs/guide.en';
+import { HEALTH_EN } from './catalogs/health.en';
+import { HISTORY_EN } from './catalogs/history.en';
 /**
  * English catalog. Same keys and same `{placeholders}` as `messages.es.ts`
  * (checked by tests/unit/messagesEn.test.ts). Texts describe the reading and one
  * everyday action; they never name a diagnosis or a medication.
  */
 export const MESSAGES_EN: Record<string, string> = {
+  ...GUIDE_EN,
+  ...HEALTH_EN,
+  ...HISTORY_EN,
   // Check-in script
   greet: 'Good morning, Ana. Daily check-in.',
   'ask.sleep': 'How many hours did you sleep?',
