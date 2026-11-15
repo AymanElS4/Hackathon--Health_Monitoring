@@ -189,13 +189,15 @@ describe('Home screen', () => {
     expect(link).toHaveAttribute('href', HISTORY_PATH);
   });
 
-  it('"Salud →" in the "Cómo estás" header is a link to the history while the Salud tab is disabled', () => {
+  it('"Salud →" in the "Cómo estás" header is a link to the history', () => {
     const container = buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }));
     renderHome(container);
 
-    const link = screen.getByRole('link', { name: new RegExp(messages['nav.health']) });
-    expect(link).toHaveAttribute('href', HISTORY_PATH);
-    expect(link).not.toHaveAttribute('aria-disabled');
+    const links = screen.getAllByRole('link', { name: new RegExp(messages['nav.health']) });
+    const headerLink = links.find((el) => el.getAttribute('href') === HISTORY_PATH);
+    expect(headerLink).toBeDefined();
+    expect(headerLink).toHaveAttribute('href', HISTORY_PATH);
+    expect(headerLink).not.toHaveAttribute('aria-disabled');
   });
 
   it('renders the bottom navigation with Hoy as the current page', () => {

@@ -1,11 +1,13 @@
 import { BookOpen, CalendarDays, HeartPulse, House, Mic, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { AGENDA_PATH, HOME_PATH } from '../../config/constants';
+import { AGENDA_PATH, GUIDE_PATH, HEALTH_PATH, HOME_PATH } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { SoonAction } from './SoonAction';
 
 /** Tabs that have a screen. */
-export type NavTab = 'home' | 'agenda';
+export type NavTab = 'home' | 'agenda' | 'health' | 'guide';
+
+
 
 export interface BottomNavProps {
   active: NavTab;
@@ -37,8 +39,18 @@ const TAB_LAYOUT = 'flex min-h-nav min-w-nav flex-1 flex-col items-center justif
 export function BottomNav({ active, onVita }: BottomNavProps) {
   const renderTab = (tab: TabDef) => {
     const Icon = tab.icon;
-    if (tab.key === 'home' || tab.key === 'agenda') {
-      const path = tab.key === 'home' ? HOME_PATH : AGENDA_PATH;
+    const path =
+      tab.key === 'home'
+        ? HOME_PATH
+        : tab.key === 'agenda'
+          ? AGENDA_PATH
+          : tab.key === 'health'
+            ? HEALTH_PATH
+            : tab.key === 'guide'
+              ? GUIDE_PATH
+              : null;
+
+    if (path !== null) {
       if (tab.key === active) {
         return (
           <div key={tab.key} aria-current="page" className={`${TAB_LAYOUT} font-semibold text-primary`}>
@@ -65,6 +77,8 @@ export function BottomNav({ active, onVita }: BottomNavProps) {
       </SoonAction>
     );
   };
+
+
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-dock items-end rounded-t-dock bg-card px-sm pb-md pt-sm shadow-dock">

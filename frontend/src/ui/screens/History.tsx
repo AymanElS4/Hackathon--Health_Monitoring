@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import type { CheckRecord, Level, Observation, Verdict } from '@base-vital/contracts';
-import { HOME_PATH } from '../../config/constants';
+import { CHECKIN_PATH, HOME_PATH } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { useAppServices } from '../AppServices';
 import { Badge } from '../components/Badge';
+import { BottomNav } from '../components/BottomNav';
 import { Card } from '../components/Card';
+import { PhysiologicalMetricsDashboard } from '../components/PhysiologicalMetricsDashboard';
+
+
 
 /** Local date and time of a check, e.g. "15 nov 2026, 9:31". */
 const DATE_TIME_FORMAT = new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short' });
@@ -77,8 +81,14 @@ function HistoryRow({ record }: HistoryRowProps) {
 /** History screen (T094, US6, CA8, HU6). Lists every saved check, newest first, from the repository. */
 export function History() {
   const container = useAppServices();
+  const history = useHistory();
   const [records, setRecords] = useState<CheckRecord[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+
+  const startCheckin = () => {
+    history.push({ pathname: CHECKIN_PATH, state: { autostart: true } });
+  };
+
 
   useEffect(() => {
     let active = true;
@@ -101,13 +111,20 @@ export function History() {
 
   return (
     <main className="min-h-screen bg-canvas">
-      <div className="mx-auto flex max-w-content flex-col gap-xl px-page pb-xl pt-xl">
+      <div className="mx-auto flex max-w-content flex-col gap-xl px-page pb-dockClearance pt-xl">
         <header className="flex items-center justify-between gap-md">
           <h1 className="text-title font-semibold text-ink">{t('screen.history')}</h1>
           <Link to={HOME_PATH} className="text-small font-semibold text-primary">
             {t('history.backHome')}
           </Link>
         </header>
+
+        {/* Panel de Métricas Fisiológicas y Gráficos Clínicos */}
+        <PhysiologicalMetricsDashboard />
+
+        <div className="pt-4 border-t border-slate-200">
+          <h2 className="text-label font-bold text-ink mb-4">Registro de Chequeos Realizados</h2>
+        </div>
         {loadFailed && <p className="text-body text-ink-secondary">{t('history.load_failed')}</p>}
         {records !== null && rows.length === 0 && <p className="text-body text-ink-secondary">{t('history.empty')}</p>}
         {rows.length > 0 && (
@@ -121,6 +138,8 @@ export function History() {
           </>
         )}
       </div>
+      <BottomNav active="health" onVita={startCheckin} />
     </main>
   );
+
 }
