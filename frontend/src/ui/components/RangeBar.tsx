@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { Level } from '@base-vital/contracts';
 import { t } from '../../config/messages.es';
 import type { RangeBarLayout } from './rangeBarLayout';
@@ -22,6 +23,12 @@ const ZONE_CLASSES: Record<Level, string> = {
   unknown: 'bg-level-unknown-fill',
 };
 
+/** Mobile allowed-label centre: fallback and clamp (percent of the bar), and the divisor for a midpoint. */
+const ALLOWED_CENTER_FALLBACK = 50;
+const ALLOWED_CENTER_MIN = 18;
+const ALLOWED_CENTER_MAX = 82;
+const HALF_DIVISOR = 2;
+
 /** Position of an element on the scale, as an inline `left` in percent of the bar. */
 const leftStyle = (pct: number) => ({ left: `${pct}%` });
 
@@ -35,6 +42,16 @@ export function RangeBar({ layout, valueLabel, baselineLearning = false, allowed
   const { markerPct, baselinePct } = layout;
   // While the baseline is learning, the band is hidden and the learning text takes its place.
   const band = baselineLearning ? null : baselinePct;
+  // Mobile bubble shows only the number; the unit (after the first space) appears from md up.
+  const spaceAt = valueLabel.indexOf(' ');
+  const bubbleNumber = spaceAt < 0 ? valueLabel : valueLabel.slice(0, spaceAt);
+  const bubbleUnit = spaceAt < 0 ? '' : valueLabel.slice(spaceAt);
+  // Centre of the allowed (green) zone, clamped so the one-line label stays inside the bar on mobile.
+  const green = layout.zones.find((zone) => zone.level === 'green');
+  const allowedCenter =
+    green === undefined
+      ? ALLOWED_CENTER_FALLBACK
+      : Math.min(ALLOWED_CENTER_MAX, Math.max(ALLOWED_CENTER_MIN, (green.fromPct + green.toPct) / HALF_DIVISOR));
 
   return (
     <div data-testid="range-bar" className="flex w-full flex-col">
@@ -45,7 +62,8 @@ export function RangeBar({ layout, valueLabel, baselineLearning = false, allowed
             className="absolute bottom-0 -translate-x-1/2 whitespace-nowrap rounded-row bg-ink px-xs text-meta font-bold text-white"
             style={leftStyle(markerPct)}
           >
-            {valueLabel}
+            {bubbleNumber}
+            {bubbleUnit !== '' && <span className="hidden md:inline">{bubbleUnit}</span>}
             <span
               aria-hidden="true"
               className="absolute left-1/2 top-full h-rangePointer w-rangePointer -translate-x-1/2 -translate-y-1/2 rotate-45 bg-ink"
@@ -82,11 +100,12 @@ export function RangeBar({ layout, valueLabel, baselineLearning = false, allowed
         )}
       </div>
 
-      <div className="relative h-rangeCutRow w-full text-meta">
+      <div className="relative h-rangeCutRow w-full text-[13px] md:text-meta">
         {allowedLabel !== undefined && allowedLabel !== '' && (
           <p
             data-testid="range-allowed"
-            className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-center text-primary"
+            className="absolute -translate-x-1/2 whitespace-nowrap text-center text-primary max-md:left-[var(--allowed-left)] md:left-1/2"
+            style={{ '--allowed-left': `${allowedCenter}%` } as CSSProperties}
           >
             {allowedLabel}
           </p>

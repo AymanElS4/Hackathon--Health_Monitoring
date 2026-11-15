@@ -15,6 +15,7 @@ import { FixedClock } from '../../src/adapters/fakes/FixedClock';
 import { MemoryCheckRepository } from '../../src/adapters/fakes/MemoryCheckRepository';
 import { StaticAgenda } from '../../src/adapters/static-agenda/StaticAgenda';
 import type { StorageLike } from '../../src/application/use-cases/selectDemoScenario';
+import { buildSeedHistory } from '../../src/application/use-cases/seedHistory';
 import { DEMO_AGENDA } from '../../src/config/agenda';
 import { DEMO_SCENARIOS } from '../../src/config/demoScenarios';
 import { messages, t } from '../../src/config/messages.es';
@@ -113,6 +114,23 @@ describe('Home screen', () => {
       expect(screen.getByText(t('status.today', { verdict: t('status.verdict.ok') }))).toBeInTheDocument(),
     );
     expect(screen.getAllByText(messages['team.criterion.note'])).toHaveLength(1);
+  });
+
+  it('shows yesterday\'s simulated check with values, chip and label when there is none today (D56)', async () => {
+    const repository = new MemoryCheckRepository();
+    await repository.seedIfEmpty(buildSeedHistory(DEMO_SCENARIOS.normal, { now: DEMO_NOW }));
+    const container = buildContainer(new FakeConnectivity(true), new FakeVoice({ mode: 'manual' }), repository);
+    renderHome(container);
+
+    await waitFor(() =>
+      expect(screen.getByText(t('status.lastCheckSimulated', { when: t('status.yesterday') }))).toBeInTheDocument(),
+    );
+    expect(screen.queryByText(t('status.noCheck'))).toBeNull();
+    expect(screen.getByText(/^Ayer: /)).toBeInTheDocument();
+    expect(screen.getAllByText(/\d/, { selector: '[class*="font-"]' }).length).toBeGreaterThan(0);
+    // "Ahora" stays the pending daily check-in.
+    expect(screen.getByText(messages['agenda.dailyCheckin'])).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: messages['home.start'] })).toBeInTheDocument();
   });
 
   it('shows the criterion line once in the legend even without a check today (the legend always explains "*")', async () => {

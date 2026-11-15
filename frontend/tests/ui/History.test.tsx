@@ -254,7 +254,8 @@ describe('History screen (T092, US6)', () => {
 
     expect(await screen.findByText(t('history.empty'))).toBeInTheDocument();
     expect(screen.queryAllByTestId(ROW_TESTID)).toHaveLength(0);
-    expect(screen.queryByText(messages['team.criterion.note'])).not.toBeInTheDocument();
+    // The demo metrics draw team bands, so the note is shown once even with no records.
+    expect(await screen.findAllByText(messages['team.criterion.note'])).toHaveLength(1);
   });
 
   it('says the history cannot be read when the repository fails, not that it is empty', async () => {
@@ -267,7 +268,7 @@ describe('History screen (T092, US6)', () => {
     expect(screen.queryAllByTestId(ROW_TESTID)).toHaveLength(0);
   });
 
-  it('shows the team criterion note only when a mood value is on screen', async () => {
+  it('shows the team criterion note exactly once when no mood value is on screen', async () => {
     const at = savedAt(15);
     const repository = new MemoryCheckRepository();
     await repository.save(
@@ -284,7 +285,7 @@ describe('History screen (T092, US6)', () => {
     renderHistory(repository);
 
     await waitFor(() => expect(rows()).toHaveLength(1));
-    expect(screen.queryByText(messages['team.criterion.note'])).not.toBeInTheDocument();
+    expect(await screen.findAllByText(messages['team.criterion.note'])).toHaveLength(1);
     expect(screen.queryByText(moodText(4))).not.toBeInTheDocument();
   });
 });
