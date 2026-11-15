@@ -79,19 +79,19 @@ they cover and must fail first.
 - [X] T033 [US3] Read methods of `pg-check-repository.ts` (`listCrewLatest`, `getCrew`, `listChecks` with observations and alert) + integration test cases
 - [X] T034 [US3] `backend/src/adapters/http/surgeon.controller.ts`: `GET /api/v1/surgeon/crew`, `GET /api/v1/surgeon/crew/:crewId` behind `X-Access-Code`; e2e `backend/tests/e2e/surgeon.e2e.test.ts` (wrong code ⇒ 401 and no data; ordering; history window)
 - [X] T035 [US3] `backend/src/config/messages.es.ts`: all Spanish page text (title, code prompt, wrong code, too many attempts, crew list, verdict names `ok`→"Bien", `attention`→"Atención", `alert`→"Alerta", sensor names, level names, symptom names, "simulado", "criterio del equipo, no clínico", "sin dato", action keys used by the tablet copied from the 001 messages as values, urgency, decisions, empty states). No diagnosis or medication words. Test `backend/tests/unit/messages.test.ts` fails on any of: `diagnóstico`, `diagnostica`, `medicamento`, `medicación`, `dosis`, `tome`
-- [X] T036 [US3] Page: `backend/src/adapters/http/page.controller.ts` (`GET /cirujano` returns `backend/public/cirujano.html` with `window.MESSAGES = <JSON of messages.es.ts>` injected; static assets `/cirujano/assets/*` from `backend/public`), `backend/public/cirujano.html`, `cirujano.css`, `cirujano.js` (vanilla: code form → `sessionStorage` → crew list → crew summary with sensors, symptoms, verdict, action, 14-day history, "simulado" and "criterio del equipo, no clínico" marks; all text from `window.MESSAGES`)
+- [X] T036 [US3] Page: `backend/src/adapters/http/page.controller.ts` (`GET /cirujano` returns `backend/public/cirujano.html`; `window.MESSAGES` is served from `/cirujano/assets/messages.js`, generated from `messages.es.ts`, no inline script (CSP `script-src 'self'`); static assets `/cirujano/assets/*` from `backend/public`), `backend/public/cirujano.html`, `cirujano.css`, `cirujano.js` (vanilla: code form → `sessionStorage` → crew list → crew summary with sensors, symptoms, verdict, action, 14-day history, "simulado" and "criterio del equipo, no clínico" marks; all text from `window.MESSAGES`)
 
 ## Phase 6: User Story 4 — avisos y decisión (P3)
 
-- [ ] T037 [US4] Use cases `list-alerts.ts` and `decide-alert.ts` (decision ∈ `manage_on_base|consult_surgeon|prepare_return`; second decision ⇒ `already_decided`; uses `CLOCK` port `backend/src/application/ports/clock.port.ts` + `backend/src/adapters/system/system-clock.ts`), unit tests
+- [X] T037 [US4] Use cases `list-alerts.ts` and `decide-alert.ts` (decision ∈ `manage_on_base|consult_surgeon|prepare_return`; second decision ⇒ `already_decided`; uses `CLOCK` port `backend/src/application/ports/clock.port.ts` + `backend/src/adapters/system/system-clock.ts`), unit tests
 - [X] T038 [US4] `listOpenAlerts`/`decideAlert` in `pg-check-repository.ts` (`UPDATE ... WHERE id=$1 AND status='open'`) + integration tests
-- [ ] T039 [US4] Endpoints `GET /api/v1/surgeon/alerts`, `POST /api/v1/surgeon/alerts/:id/decision` in `surgeon.controller.ts` + e2e (order `now` first then oldest; 409 on second decision)
-- [ ] T040 [US4] Alert queue and decision buttons in `backend/public/cirujano.js` (text from messages)
+- [X] T039 [US4] Endpoints `GET /api/v1/surgeon/alerts`, `POST /api/v1/surgeon/alerts/:id/decision` in `surgeon.controller.ts` + e2e (order `now` first then oldest; 409 on second decision)
+- [X] T040 [US4] Alert queue and decision buttons in `backend/public/cirujano.js` (text from messages)
 
 ## Phase 7: Polish
 
-- [ ] T041 [P] `backend/scripts/seed-demo.ts` (FR-016): 14 simulated daily checks for `crew-a1b2c3`, mission start `2026-10-24`, fixed variation, `simulated: true` everywhere, through the ingest use case and the Postgres repository; idempotent (fixed `clientCheckId`s)
-- [ ] T042 [P] Update `backend/README.md` and `specs/004-resumen-cirujano/quickstart.md` with the final commands; update `specs/README.md` row 004 to "Implementada (backend)"
+- [X] T041 [P] `backend/scripts/seed-demo.ts` (FR-016): 14 simulated daily checks for `crew-a1b2c3`, mission start `2026-10-24`, fixed variation, `simulated: true` everywhere, through the ingest use case and the Postgres repository; idempotent (fixed `clientCheckId`s)
+- [X] T042 [P] Update `backend/README.md` and `specs/004-resumen-cirujano/quickstart.md` with the final commands; update `specs/README.md` row 004 to "Implementada (backend)"
 - [ ] T043 Full verification: `npm test` in `backend/`, `npx eslint backend --ext .ts`, quickstart §1–§6 against `docker compose up`, `git grep` for code values (SC-006)
 
 ## Dependencies

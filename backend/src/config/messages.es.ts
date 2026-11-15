@@ -85,10 +85,15 @@ export const MESSAGES_ES = {
   // Team criterion and simulation marks (principle VIII)
   'team.criterion': 'criterio del equipo, no clínico',
   'history.simulated': 'simulado',
+  'history.col.day': 'Día',
+  'history.col.date': 'Fecha',
+  'history.col.verdict': 'Veredicto',
+  'history.col.notes': 'Notas',
 
   // Open alerts (US4)
   'alerts.title': 'Avisos abiertos',
   'alerts.empty': 'No hay avisos abiertos.',
+  'alerts.open': 'Ver resumen',
   'urgency.now': 'Ahora',
   'urgency.soon': 'Pronto',
   'decision.manage_on_base': 'Manejar en la base',

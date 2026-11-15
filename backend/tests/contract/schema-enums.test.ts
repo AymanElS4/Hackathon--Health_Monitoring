@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ALERT_DECISIONS } from '../../src/application/use-cases/decide-alert';
 import { Indicator, Source, Symptom, Verdict } from '../../src/shared/contracts';
 
 // FR-015: the SQL CHECK lists must mirror the Zod contract enums exactly.
@@ -83,6 +84,10 @@ describe('0001_init.sql CHECK lists match the contracts', () => {
       'manage_on_base',
       'prepare_return',
     ]);
+  });
+
+  it('alerts.decision equals ALERT_DECISIONS (use-case validation mirrors the SQL list)', () => {
+    expect(sorted(checkList(SQL, 'alerts', 'decision'))).toEqual(sorted(ALERT_DECISIONS));
   });
 
   it('observations table has no level or team_criterion column (decision M9)', () => {

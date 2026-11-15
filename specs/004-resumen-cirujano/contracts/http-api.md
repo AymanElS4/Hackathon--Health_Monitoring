@@ -52,4 +52,4 @@ Body `{ "decision": "manage_on_base" | "consult_surgeon" | "prepare_return" }`
 - `404 not_found` · `409 {"error":"already_decided"}` · `400 invalid_decision`
 
 ## Page
-`GET /cirujano` → HTML (Spanish strings injected from `messages.es.ts`), assets under `/cirujano/assets/`.
+`GET /cirujano` → HTML. `window.MESSAGES` is served from `/cirujano/assets/messages.js`, generated from `messages.es.ts`, no inline script (CSP `script-src 'self'`). Other assets under `/cirujano/assets/`.

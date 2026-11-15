@@ -77,7 +77,7 @@
         "phase": "confirmed",
         "value": "128 lpm",
         "outsideNormal": true,
-        "teamCriterion": false,
+        "teamCriterion": true,
         "reason": "resting_heart_rate"
       },
       "pressure": {

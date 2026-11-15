@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { Indicator, Level, SensorKey, Symptom, Verdict } from '../../src/shared/contracts';
 import { MESSAGES_ES } from '../../src/config/messages.es';
+import { ALERT_DECISIONS } from '../../src/application/use-cases/decide-alert';
 
 /** Words that must never appear in surgeon-page text (constitution, principle VI). */
 const FORBIDDEN_WORDS = [
@@ -42,6 +43,8 @@ describe('surgeon messages (MESSAGES_ES)', () => {
     ['Indicator', Indicator.options, 'indicator'],
     ['SensorKey', SensorKey.options, 'sensor'],
     ['Level', Level.options, 'level'],
+    ['AlertDecision', ALERT_DECISIONS, 'decision'],
+    ['Urgency', ['now', 'soon'], 'urgency'],
   ])('has a key for every %s value', (_name, values, prefix) => {
     for (const value of values) {
       expect(messages, `${prefix}.${value}`).toHaveProperty([`${prefix}.${value}`]);

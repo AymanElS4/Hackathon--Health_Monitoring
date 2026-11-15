@@ -9,13 +9,19 @@
   var CODE_HEADER = 'X-Access-Code';
   var HTTP_UNAUTHORIZED = 401;
   var HTTP_NOT_FOUND = 404;
+  var HTTP_CONFLICT = 409;
   var HTTP_TOO_MANY = 429;
   var HTTP_UNAVAILABLE = 503;
   var VERDICTS = ['ok', 'attention', 'alert'];
+  var OK_VERDICT = 'ok';
   var LEVELS = ['green', 'amber', 'red', 'in_doubt', 'unknown'];
+  var UNKNOWN_LEVEL = 'unknown';
+  var URGENCIES = ['now', 'soon'];
+  var DECISIONS = ['manage_on_base', 'consult_surgeon', 'prepare_return'];
+  var DECIDED_STATUS = 'decided';
+  var SENSOR_ORDER = ['sleep', 'pulse', 'pressure', 'temperature', 'oxygen'];
   var NO_SYMPTOM = 'none';
   var MISSING_DATA_ACTION = 'action.missing_data';
-  var SENSOR_PLACEHOLDER = '…';
   var TEAM_MARK = '* ';
   var UNKNOWN_CLASS = 'unknown';
   var ERROR_KEYS = {
@@ -23,12 +29,16 @@
     too_many: 'code.too_many',
     unavailable: 'error.unavailable',
     not_found: 'error.not_found',
+    already_decided: 'decision.already',
   };
 
   var MESSAGES = window.MESSAGES || {};
   var fallbackCode = null;
   var currentView = null;
-  var selectedCrewId = null;
+  var summaryCrewId = null;
+  // Request counters: only the latest response of each kind is rendered.
+  var boardSeq = 0;
+  var summarySeq = 0;
 
   /** Error raised by `api` with a kind that maps to a message key. */
   function ApiError(kind) {
@@ -81,6 +91,12 @@
     }
   }
 
+  function setDisabled(buttons, disabled) {
+    buttons.forEach(function (button) {
+      button.disabled = disabled;
+    });
+  }
+
   /** Restricts a server value used in a CSS class to a known set. */
   function classToken(value, allowed) {
     return allowed.indexOf(value) === -1 ? UNKNOWN_CLASS : value;
@@ -101,6 +117,16 @@
       return value.systolic + '/' + value.diastolic;
     }
     return String(value);
+  }
+
+  /** Readings in the fixed sensor order, as {key, reading} pairs; sensors without a reading are skipped. */
+  function sensorEntries(readings) {
+    var source = readings || {};
+    return SENSOR_ORDER.filter(function (key) {
+      return Object.prototype.hasOwnProperty.call(source, key);
+    }).map(function (key) {
+      return { key: key, reading: source[key] };
+    });
   }
 
   // ---- Access code (kept for this tab only: sessionStorage, plus memory if storage is blocked) ----
@@ -137,13 +163,21 @@
 
   // ---- Data access ----
 
-  /** GET of `/api/v1${path}` with the access code. Maps failures to ApiError kinds. */
-  async function api(path) {
+  /**
+   * Request to `/api/v1${path}` with the access code. GET by default; POST sends `body` as JSON.
+   * Maps failures to ApiError kinds.
+   */
+  async function api(path, method, body) {
     var headers = {};
     var response;
     headers[CODE_HEADER] = readCode() || '';
+    var init = { method: method || 'GET', headers: headers, cache: 'no-store' };
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(body);
+    }
     try {
-      response = await fetch(API_BASE + path, { headers: headers, cache: 'no-store' });
+      response = await fetch(API_BASE + path, init);
     } catch (error) {
       throw new ApiError('unavailable');
     }
@@ -156,6 +190,9 @@
     }
     if (response.status === HTTP_NOT_FOUND) {
       throw new ApiError('not_found');
+    }
+    if (response.status === HTTP_CONFLICT) {
+      throw new ApiError('already_decided');
     }
     if (response.status === HTTP_UNAVAILABLE || !response.ok) {
       throw new ApiError('unavailable');
@@ -177,6 +214,9 @@
     codeForm: document.getElementById('code-form'),
     codeInput: document.getElementById('code-input'),
     codeError: document.getElementById('code-error'),
+    alertsTitle: document.getElementById('alerts-title'),
+    alertList: document.getElementById('alerts-list'),
+    alertsEmpty: document.getElementById('alerts-empty'),
     crewList: document.getElementById('crew-list'),
     crewEmpty: document.getElementById('crew-empty'),
     back: document.getElementById('back-button'),
@@ -195,13 +235,21 @@
   }
 
   function showLogin() {
+    // Responses still in flight belong to the previous session: ignore them.
+    boardSeq += 1;
+    summarySeq += 1;
+    summaryCrewId = null;
     showView('login');
     refs.codeInput.value = '';
   }
 
+  function kindOf(error) {
+    return error instanceof ApiError ? error.kind : 'unavailable';
+  }
+
   /** Shows a failure on the code form while logging in, or in the status line otherwise. */
   function handleError(error) {
-    var kind = error instanceof ApiError ? error.kind : 'unavailable';
+    var kind = kindOf(error);
     var key = ERROR_KEYS[kind] || ERROR_KEYS.unavailable;
     if (kind === 'invalid' || kind === 'too_many') {
       clearCode();
@@ -238,6 +286,85 @@
     return el('section', { className: 'summary-block' }, [el('h3', { text: t(titleKey) }), content]);
   }
 
+  // ---- Alert queue (US4) ----
+
+  /** One open alert: urgency, crew, day, verdict, time, summary button and the three decisions. */
+  function alertRow(item) {
+    var buttons = [];
+    DECISIONS.forEach(function (decision) {
+      buttons.push(
+        el('button', {
+          className: 'button',
+          attrs: { type: 'button' },
+          text: t('decision.' + decision),
+          onClick: function () {
+            decide(item, decision, buttons);
+          },
+        }),
+      );
+    });
+    return el('li', { className: 'alert-item' }, [
+      el('p', null, [
+        el('span', {
+          className: 'urgency-' + classToken(item.urgency, URGENCIES),
+          text: t('urgency.' + item.urgency),
+        }),
+        ' ',
+        el('span', { className: 'crew-id', text: item.crewId }),
+        ' ',
+        el('span', { className: 'crew-day', text: t('crew.day', { day: item.missionDay }) }),
+        ' ',
+        verdictBadge(item.verdict),
+      ]),
+      el('p', { className: 'muted', text: formatDateTime(item.createdAt) }),
+      el('p', null, [
+        el('button', {
+          className: 'button',
+          attrs: { type: 'button' },
+          text: t('alerts.open'),
+          onClick: function () {
+            showSummary(item.crewId);
+          },
+        }),
+      ]),
+      el('p', null, [el('strong', { text: t('decision.prompt') })]),
+      el('div', { className: 'decision-buttons' }, buttons),
+    ]);
+  }
+
+  function renderAlerts(alerts) {
+    clear(refs.alertList);
+    alerts.forEach(function (item) {
+      refs.alertList.appendChild(alertRow(item));
+    });
+    refs.alertsEmpty.textContent = t('alerts.empty');
+    refs.alertsEmpty.hidden = alerts.length !== 0;
+  }
+
+  /** Sends one decision. The buttons of that alert stay disabled while the request is in flight. */
+  async function decide(item, decision, buttons) {
+    setDisabled(buttons, true);
+    try {
+      await api('/surgeon/alerts/' + encodeURIComponent(item.id) + '/decision', 'POST', { decision: decision });
+    } catch (error) {
+      setDisabled(buttons, false);
+      handleError(error);
+      if (kindOf(error) === 'already_decided') {
+        refreshAll();
+      }
+      return;
+    }
+    refreshAll();
+  }
+
+  /** Reloads the queue and the crew list, and the summary when it is open. */
+  async function refreshAll() {
+    await loadBoard();
+    if (currentView === 'summary' && summaryCrewId !== null) {
+      await loadSummary(summaryCrewId);
+    }
+  }
+
   // ---- Crew list ----
 
   function crewRow(row) {
@@ -272,27 +399,58 @@
     return el('li', null, [button]);
   }
 
-  async function loadCrew() {
-    showView('crew');
+  function renderCrew(rows) {
     clear(refs.crewList);
-    refs.crewEmpty.hidden = true;
+    rows.forEach(function (row) {
+      refs.crewList.appendChild(crewRow(row));
+    });
+    refs.crewEmpty.textContent = t('crew.empty');
+    refs.crewEmpty.hidden = rows.length !== 0;
+  }
+
+  /** Loads the alert queue and the crew list together. Only the latest response is rendered. */
+  async function loadBoard() {
+    var seq = ++boardSeq;
     try {
-      var rows = await api('/surgeon/crew');
-      rows.forEach(function (row) {
-        refs.crewList.appendChild(crewRow(row));
-      });
-      refs.crewEmpty.textContent = t('crew.empty');
-      refs.crewEmpty.hidden = rows.length !== 0;
+      var data = await Promise.all([api('/surgeon/alerts'), api('/surgeon/crew')]);
+      if (seq !== boardSeq) {
+        return;
+      }
+      renderAlerts(data[0]);
+      renderCrew(data[1]);
     } catch (error) {
-      handleError(error);
+      if (seq === boardSeq) {
+        handleError(error);
+      }
     }
+  }
+
+  function loadCrew() {
+    showView('crew');
+    return loadBoard();
   }
 
   // ---- Crew summary ----
 
-  function actionText(actionKey) {
-    var vars = actionKey === MISSING_DATA_ACTION ? { sensor: SENSOR_PLACEHOLDER } : undefined;
-    return t(actionKey, vars);
+  /** Spanish sensor name of the first sensor with no usable reading; falls back to the generic label. */
+  function missingSensorLabel(readings) {
+    var unknown = sensorEntries(readings).filter(function (entry) {
+      return entry.reading.level === UNKNOWN_LEVEL;
+    });
+    return unknown.length > 0 ? t('sensor.' + unknown[0].key) : t('level.unknown');
+  }
+
+  function actionText(actionKey, readings) {
+    if (actionKey === MISSING_DATA_ACTION) {
+      return t(actionKey, { sensor: missingSensorLabel(readings) });
+    }
+    return t(actionKey);
+  }
+
+  function hasTeamCriterion(readings) {
+    return sensorEntries(readings).some(function (entry) {
+      return entry.reading.teamCriterion;
+    });
   }
 
   function symptomsText(symptoms) {
@@ -307,10 +465,23 @@
     }).join(', ');
   }
 
+  /** "decided" line for an alert that has a decision; null otherwise. */
+  function decisionNote(alert) {
+    if (!alert || alert.status !== DECIDED_STATUS || !alert.decision) {
+      return null;
+    }
+    return el('p', {
+      text: t('decision.made', {
+        decision: t('decision.' + alert.decision),
+        time: formatDateTime(alert.decidedAt),
+      }),
+    });
+  }
+
   function sensorsTable(readings) {
     var table = el('table', { className: 'sensors' });
-    Object.keys(readings || {}).forEach(function (key) {
-      var reading = readings[key];
+    sensorEntries(readings).forEach(function (entry) {
+      var reading = entry.reading;
       var levelChildren = [
         el('span', {
           className: 'badge level-' + classToken(reading.level, LEVELS),
@@ -322,7 +493,7 @@
       }
       table.appendChild(
         el('tr', null, [
-          el('th', { attrs: { scope: 'row' }, text: t('sensor.' + key) }),
+          el('th', { attrs: { scope: 'row' }, text: t('sensor.' + entry.key) }),
           el('td', { text: reading.value }),
           el('td', null, levelChildren),
         ]),
@@ -334,53 +505,80 @@
   function observationsList(observations) {
     var list = el('ul', { className: 'list' });
     (observations || []).forEach(function (observation) {
-      list.appendChild(
-        el('li', {
-          text:
-            t('indicator.' + observation.indicator) + ': ' +
-            formatValue(observation.value) + ' ' + observation.unit + ' (' +
-            t('summary.source.' + observation.source) + ')',
-        }),
-      );
+      var nodes = [
+        t('indicator.' + observation.indicator) + ': ' +
+        formatValue(observation.value) + ' ' + observation.unit + ' (' +
+        t('summary.source.' + observation.source) + ')',
+      ];
+      if (observation.simulated) {
+        nodes.push(' ', simulatedBadge());
+      }
+      list.appendChild(el('li', null, nodes));
     });
     return list;
   }
 
-  /** One check (latest check in full): verdict, action, symptoms, sensors and values. */
+  /** One check (latest check in full): verdict, action, symptoms, decision, sensors and values. */
   function checkDetail(check) {
-    var head = [
-      el('p', null, [
-        el('strong', { text: t('crew.day', { day: check.missionDay }) + ' · ' }),
-        verdictBadge(check.verdict),
-        ' ' + formatDateTime(check.completedAt) + ' ',
-      ]),
+    var headChildren = [
+      el('strong', { text: t('crew.day', { day: check.missionDay }) + ' · ' }),
+      verdictBadge(check.verdict),
+      ' ' + formatDateTime(check.completedAt) + ' ',
     ];
     if (check.simulated) {
-      head[0].appendChild(simulatedBadge());
+      headChildren.push(simulatedBadge());
     }
-    var nodes = head;
+    var nodes = [el('p', null, headChildren)];
     if (check.actionKey) {
-      nodes.push(labelled('summary.action', actionText(check.actionKey)));
+      nodes.push(labelled('summary.action', actionText(check.actionKey, check.readings)));
     }
     nodes.push(labelled('summary.symptoms', symptomsText(check.symptoms)));
+    var decided = decisionNote(check.alert);
+    if (decided) {
+      nodes.push(decided);
+    }
     nodes.push(section('summary.sensors', sensorsTable(check.readings)));
     nodes.push(section('summary.values', observationsList(check.observations)));
     return el('div', null, nodes);
   }
 
+  /** Notes cell of a history row: simulated mark, team criterion mark, decision. */
+  function historyNotes(check) {
+    var notes = [];
+    if (check.simulated) {
+      notes.push(el('div', null, [simulatedBadge()]));
+    }
+    if (check.verdict !== OK_VERDICT && hasTeamCriterion(check.readings)) {
+      notes.push(el('div', { className: 'team-mark', text: TEAM_MARK + t('team.criterion') }));
+    }
+    var decided = decisionNote(check.alert);
+    if (decided) {
+      notes.push(decided);
+    }
+    return notes;
+  }
+
   function historyTable(history) {
     var table = el('table', { className: 'history' });
+    var headRow = el('tr', null, [
+      el('th', { attrs: { scope: 'col' }, text: t('history.col.day') }),
+      el('th', { attrs: { scope: 'col' }, text: t('history.col.date') }),
+      el('th', { attrs: { scope: 'col' }, text: t('history.col.verdict') }),
+      el('th', { attrs: { scope: 'col' }, text: t('history.col.notes') }),
+    ]);
+    table.appendChild(el('thead', null, [headRow]));
+    var body = el('tbody');
     (history || []).forEach(function (check) {
-      var cells = [
-        el('td', { text: t('crew.day', { day: check.missionDay }) }),
-        el('td', { text: formatDate(check.completedAt) }),
-        el('td', null, [verdictBadge(check.verdict)]),
-      ];
-      if (check.simulated) {
-        cells.push(el('td', null, [simulatedBadge()]));
-      }
-      table.appendChild(el('tr', null, cells));
+      body.appendChild(
+        el('tr', null, [
+          el('td', { text: t('crew.day', { day: check.missionDay }) }),
+          el('td', { text: formatDate(check.completedAt) }),
+          el('td', null, [verdictBadge(check.verdict)]),
+          el('td', null, historyNotes(check)),
+        ]),
+      );
     });
+    table.appendChild(body);
     return table;
   }
 
@@ -392,16 +590,26 @@
     refs.summaryBody.appendChild(section('summary.history', historyTable(data.history)));
   }
 
-  async function showSummary(crewId) {
-    selectedCrewId = crewId;
-    showView('summary');
-    clear(refs.summaryBody);
+  /** Fetches one crew summary and renders it only if it is still the latest request. */
+  async function loadSummary(crewId) {
+    var seq = ++summarySeq;
     try {
       var data = await api('/surgeon/crew/' + encodeURIComponent(crewId));
-      renderSummary(data);
+      if (seq === summarySeq) {
+        renderSummary(data);
+      }
     } catch (error) {
-      handleError(error);
+      if (seq === summarySeq) {
+        handleError(error);
+      }
     }
+  }
+
+  function showSummary(crewId) {
+    summaryCrewId = crewId;
+    showView('summary');
+    clear(refs.summaryBody);
+    return loadSummary(crewId);
   }
 
   // ---- Wiring ----
@@ -425,7 +633,8 @@
   });
 
   refs.back.addEventListener('click', function () {
-    selectedCrewId = null;
+    summarySeq += 1;
+    summaryCrewId = null;
     loadCrew();
   });
 
@@ -436,6 +645,7 @@
     document.getElementById('code-label').textContent = t('code.label');
     document.getElementById('code-submit').textContent = t('code.submit');
     refs.logout.textContent = t('code.logout');
+    refs.alertsTitle.textContent = t('alerts.title');
     document.getElementById('crew-title').textContent = t('crew.title');
     refs.back.textContent = t('crew.back');
   }

@@ -19,7 +19,7 @@
 
   <main>
     <section id="login-view" hidden>
-      <form id="code-form" class="card">
+      <form id="code-form" class="card" novalidate>
         <label id="code-label" for="code-input"></label>
         <input id="code-input" name="code" type="password" autocomplete="off" required>
         <button type="submit" id="code-submit" class="button button-primary"></button>
@@ -28,6 +28,11 @@
     </section>
 
     <section id="crew-view" hidden>
+      <section id="alerts-section" class="summary-block">
+        <h2 id="alerts-title"></h2>
+        <ul id="alerts-list" class="crew-list"></ul>
+        <p id="alerts-empty" class="muted" hidden></p>
+      </section>
       <h2 id="crew-title"></h2>
       <ul id="crew-list" class="crew-list"></ul>
       <p id="crew-empty" class="muted" hidden></p>
