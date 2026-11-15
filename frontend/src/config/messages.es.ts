@@ -113,6 +113,7 @@ export const messages: Record<string, string> = {
   // Baseline, simulation and navigation
   'baseline.learning': 'Aún aprendo tu normal',
   'device.simulated': 'equipo simulado',
+  'device.simulated.short': 'simulado',
   'meta.separator': '·',
   'history.simulated': 'simulado',
   'history.source.voice': 'voz',

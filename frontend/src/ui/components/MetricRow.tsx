@@ -108,7 +108,7 @@ export function MetricRow({
     <li
       data-highlighted={highlighted ? 'true' : 'false'}
       onClick={onSelect}
-      className={`flex flex-wrap items-center gap-x-md gap-y-xs rounded-row bg-card px-md py-xs ${highlighted ? 'ring-2 ring-primary' : ''} ${onSelect ? 'cursor-pointer' : ''}`}
+      className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-md gap-y-xs md:flex md:flex-wrap rounded-row bg-card px-md py-xs ${highlighted ? 'ring-2 ring-primary' : ''} ${onSelect ? 'cursor-pointer' : ''}`}
     >
       <span
         className={`flex h-metricIcon w-metricIcon shrink-0 items-center justify-center rounded-full ${classes.circle}`}
@@ -116,24 +116,29 @@ export function MetricRow({
         <Icon aria-hidden="true" className={`h-lg w-lg ${classes.icon}`} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-small font-semibold text-ink">
+        <p className="whitespace-nowrap text-small font-semibold text-ink md:whitespace-normal">
           {t(`sensor.${sensor}`)}
           {showDeviceNote && (
-            <span className="ml-xs text-meta font-normal text-ink-secondary">
-              {t('meta.separator')} <span>{t('device.simulated')}</span>
+            <span
+              data-testid="device-chip"
+              className="mt-[2px] block w-fit whitespace-nowrap rounded-full bg-track px-sm text-[12px] font-normal text-ink-secondary md:ml-xs md:mt-0 md:inline md:w-auto md:rounded-none md:bg-transparent md:px-0 md:text-meta"
+            >
+              <span className="hidden md:inline">{t('meta.separator')} </span>
+              <span className="md:hidden">{t('device.simulated.short')}</span>
+              <span className="hidden md:inline">{t('device.simulated')}</span>
             </span>
           )}
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-sm">
-        <p className="whitespace-nowrap text-body font-bold text-ink">
+      <div className="contents md:flex md:shrink-0 md:items-center md:gap-sm">
+        <p className="col-span-3 row-start-2 whitespace-nowrap text-[22px] font-bold leading-tight text-ink md:col-auto md:row-auto md:text-body md:leading-normal">
           <span className="text-ink">{hasValue ? value : t('value.missing')}</span>
           {hasValue && unit !== undefined && <span className="ml-xs text-meta font-normal text-ink-secondary">{unit}</span>}
         </p>
-        {slot}
+        <span className="col-start-3 row-start-1 justify-self-end md:contents">{slot}</span>
       </div>
       {layout !== undefined && (
-        <div className="basis-full">
+        <div className="col-span-3 basis-full">
           <RangeBar
             layout={layout}
             valueLabel={valueLabel}

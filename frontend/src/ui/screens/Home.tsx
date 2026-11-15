@@ -103,7 +103,7 @@ export function Home() {
   return (
     <main className="min-h-screen bg-canvas">
       <HomeHeader header={view.header} />
-      <div className="mx-auto flex max-w-content flex-col gap-xl px-page pb-dockClearance pt-lg">
+      <div className="mx-auto flex max-w-content flex-col gap-xl px-page pb-[184px] md:pb-dockClearance pt-lg">
         <div className="grid grid-cols-1 items-stretch gap-xl md:grid-cols-12">
           <div className="contents md:col-span-4 md:flex md:flex-col md:gap-xl [&>:first-child]:order-1 [&>:last-child]:order-3 md:[&>*]:order-none">
             {view.now !== null && <NowCard now={view.now} onStart={startCheckin} />}

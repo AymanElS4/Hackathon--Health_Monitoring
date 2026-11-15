@@ -83,12 +83,17 @@ export function BottomNav({ active, onVita }: BottomNavProps) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full items-end rounded-t-dock bg-card px-xs max-w-dock md:px-sm pb-md pt-sm shadow-dock">
       {LEFT_TABS.map(renderTab)}
-      <div className="flex flex-1 justify-center">
-        <button type="button" onClick={onVita} className="group flex flex-col items-center gap-xs text-meta font-semibold text-primary">
-          <span className="-mt-xl flex h-vita w-vita items-center justify-center rounded-full bg-primary text-card shadow-primary group-hover:bg-primary-hover">
+      <div className="flex flex-1 justify-center max-md:contents">
+        <button
+          type="button"
+          onClick={onVita}
+          aria-label={t('home.vita')}
+          className="group flex flex-col items-center gap-xs text-meta font-semibold text-primary max-md:fixed max-md:bottom-[96px] max-md:right-md max-md:z-50"
+        >
+          <span className="-mt-xl flex h-vita w-vita items-center justify-center rounded-full bg-primary text-card shadow-primary group-hover:bg-primary-hover max-md:mt-0 max-md:h-[60px] max-md:w-[60px]">
             <Mic aria-hidden="true" className="h-xl w-xl" />
           </span>
-          <span>{t('home.vita')}</span>
+          <span className="max-md:sr-only">{t('home.vita')}</span>
         </button>
       </div>
       {RIGHT_TABS.map(renderTab)}
