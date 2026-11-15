@@ -6,6 +6,7 @@ import {
   VOICES_CHANGED_TIMEOUT_MS,
   type SpeechSynthLike,
 } from '../../../src/adapters/web-speech-tts/SpeechSynth';
+import type { VoiceLanguage } from '../../../src/domain/parsing/parseUtterance';
 
 const LINE = 'Buenos días';
 
@@ -16,6 +17,10 @@ function voice(lang: string, localService: boolean): SpeechSynthesisVoice {
 const localEs = voice('es-MX', true);
 const networkEs = voice('es-ES', false);
 const localEn = voice('en-US', true);
+const localEnUs = voice('en-US', true);
+const localEnGb = voice('en-GB', true);
+const localEnAu = voice('en-AU', true);
+const networkEnUs = voice('en-US', false);
 
 class FakeUtterance {
   voice: SpeechSynthesisVoice | null = null;
@@ -30,7 +35,7 @@ class FakeUtterance {
   }
 }
 
-function setup(voices: SpeechSynthesisVoice[]) {
+function setup(voices: SpeechSynthesisVoice[], language: () => VoiceLanguage = () => 'es') {
   const spoken: FakeUtterance[] = [];
   const voiceListeners: Array<() => void> = [];
   const synth = {
@@ -45,6 +50,7 @@ function setup(voices: SpeechSynthesisVoice[]) {
   const tts = new SpeechSynth({
     synth: synth as unknown as SpeechSynthLike,
     UtteranceCtor: FakeUtterance as unknown as typeof SpeechSynthesisUtterance,
+    language,
   });
   const fireVoicesChanged = () => { for (const l of [...voiceListeners]) l(); };
   return { tts, synth, spoken, fireVoicesChanged };
@@ -131,5 +137,77 @@ describe('SpeechSynth', () => {
     await vi.advanceTimersByTimeAsync(VOICES_CHANGED_TIMEOUT_MS);
     expect(tts.isAvailable()).toBe(false);
     expect(synth.removeEventListener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('SpeechSynth English voice', () => {
+  const english = (): VoiceLanguage => 'en';
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('picks en-US over en-GB and other local en voices, ignoring network and Spanish voices', async () => {
+    const { tts, spoken } = setup([networkEnUs, localEnAu, localEnGb, localEs, localEnUs], english);
+    const done = tts.speak(LINE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(spoken[0]?.voice).toBe(localEnUs);
+    expect(spoken[0]?.lang).toBe('en-US');
+    spoken[0]?.fire('end');
+    await done;
+  });
+
+  it('falls back to en-GB, then to any other local en voice', async () => {
+    const withGb = setup([localEnAu, localEnGb], english);
+    const doneGb = withGb.tts.speak(LINE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(withGb.spoken[0]?.voice).toBe(localEnGb);
+    withGb.spoken[0]?.fire('end');
+    await doneGb;
+
+    const onlyAu = setup([localEnAu], english);
+    const doneAu = onlyAu.tts.speak(LINE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onlyAu.spoken[0]?.voice).toBe(localEnAu);
+    onlyAu.spoken[0]?.fire('end');
+    await doneAu;
+  });
+
+  it('resolves without speaking when there is no local English voice', async () => {
+    const { tts, synth } = setup([networkEnUs, localEs], english);
+    await tts.speak(LINE);
+    expect(tts.isAvailable()).toBe(false);
+    expect(synth.speak).not.toHaveBeenCalled();
+  });
+
+  it('uses the language at each speak call', async () => {
+    let language: VoiceLanguage = 'es';
+    const { tts, spoken } = setup([localEs, localEnUs], () => language);
+
+    const first = tts.speak(LINE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(spoken[0]?.voice).toBe(localEs);
+    spoken[0]?.fire('end');
+    await first;
+
+    language = 'en';
+    expect(tts.isAvailable()).toBe(true);
+    const second = tts.speak(LINE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(spoken[1]?.voice).toBe(localEnUs);
+    expect(spoken[1]?.lang).toBe('en-US');
+    spoken[1]?.fire('end');
+    await second;
+  });
+
+  it('re-reads the voice list on voiceschanged', async () => {
+    const { tts, synth, fireVoicesChanged } = setup([localEs], english);
+    expect(tts.isAvailable()).toBe(false);
+    synth.getVoices.mockReturnValue([localEs, localEnUs]);
+    fireVoicesChanged();
+    expect(tts.isAvailable()).toBe(true);
   });
 });

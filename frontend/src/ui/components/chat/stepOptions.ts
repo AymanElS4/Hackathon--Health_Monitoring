@@ -2,6 +2,7 @@ import { MOOD_MAX, MOOD_MIN, SLEEP_HOURS_MAX } from '@base-vital/contracts';
 import type { CheckinSnapshot } from '../../../application/use-cases/runCheckin';
 import { SLEEP_HOURS_MIN, SLEEP_HOURS_STEP } from '../../../config/constants';
 import { formatNumber, t } from '../../../config/messages.es';
+import { getLocale } from '../../../config/i18n';
 
 /** Steps that listen for an answer (the same ids the runner can pass to `showButtons`). */
 export type AnswerStep = NonNullable<CheckinSnapshot['buttonsFor']>;
@@ -23,7 +24,7 @@ function sleepOptions(): StepOption[] {
   return Array.from({ length: count }, (_, index) => {
     const hours = SLEEP_HOURS_MIN + index * SLEEP_HOURS_STEP;
     return {
-      label: t('checkin.hoursOption', { h: formatNumber(hours) }),
+      label: t('checkin.hoursOption', { h: formatNumber(hours, getLocale()) }),
       value: String(hours),
     };
   });

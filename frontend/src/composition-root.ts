@@ -14,6 +14,8 @@ import { FakeVoice } from './adapters/fakes/FakeVoice';
 import { checkinScripts } from './config/checkinScripts';
 import { evaluateFromState } from './application/use-cases/evaluateFromState';
 import { createCheckinRunner, type CheckinRunner } from './application/use-cases/runCheckin';
+import { getLocale, subscribeLocale } from './config/i18n';
+import type { VoiceLanguage } from './domain/parsing/parseUtterance';
 import { createDevMetricsRecorder, type DevMetricsRecorder, type DevMetricsTap } from './application/devMetrics';
 import { NavigatorConnectivity } from './adapters/navigator-connectivity/NavigatorConnectivity';
 import type {
@@ -110,10 +112,33 @@ export interface AppContainer {
   devMetrics: DevMetricsRecorder;
 }
 
+/**
+ * Voice language of the running check-in. The runner stores it when the check-in is created
+ * (from the screen locale); the adapters read it at each speak/listen, so they follow it.
+ */
+export interface VoiceLanguageHolder {
+  current: VoiceLanguage;
+}
+
+/**
+ * Keeps the voice language on the UI locale while no check-in runs, so Home preloads the model
+ * of the language in use after a toggle. An active check-in keeps the language it was created with.
+ * Returns the function that stops following.
+ */
+export function followLocaleForVoice(
+  holder: VoiceLanguageHolder,
+  isCheckinActive: () => boolean,
+): () => void {
+  return subscribeLocale(() => {
+    if (!isCheckinActive()) holder.current = getLocale();
+  });
+}
+
 function createVoice(
   mode: VoiceAdapterMode,
   scenario: DemoScenario,
   devMetrics: DevMetricsRecorder,
+  voiceLanguage: VoiceLanguageHolder,
 ): { recognizer: SpeechRecognizerPort; synthesizer: SpeechSynthesizerPort } {
   if (mode === 'real') {
     const timing = {
@@ -121,7 +146,11 @@ function createVoice(
       onFinal: ({ lastPartialAt, finalAt }: { lastPartialAt: number; finalAt: number }) =>
         devMetrics.markFinal(finalAt, lastPartialAt),
     };
-    return { recognizer: new VoskRecognizer({ timing }), synthesizer: new SpeechSynth() };
+    const language = () => voiceLanguage.current;
+    return {
+      recognizer: new VoskRecognizer({ timing, language }),
+      synthesizer: new SpeechSynth({ language }),
+    };
   }
   const fake = new FakeVoice({
     mode: scenario.voice === 'never_understands' ? 'never_understands' : 'manual',
@@ -143,7 +172,12 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
   const voiceMode = selectVoiceMode(scenario, search);
   const devMetrics = createDevMetricsRecorder();
   const metrics: DevMetricsTap = { recorder: devMetrics, now: () => performance.now() };
-  const voice = createVoice(voiceMode, scenario, devMetrics);
+  // Starts at the screen locale so Home preloads the model of the language in use.
+  const voiceLanguage: VoiceLanguageHolder = { current: getLocale() };
+  /** True from the creation of a check-in runner until that runner is disposed. */
+  let checkinActive = false;
+  followLocaleForVoice(voiceLanguage, () => checkinActive);
+  const voice = createVoice(voiceMode, scenario, devMetrics, voiceLanguage);
   const devices = new SimulatedDevices(scenario, { clock: () => clock.now() });
   const agenda = new StaticAgenda(DEMO_AGENDA);
   const repository = new IdbCheckRepository();
@@ -158,8 +192,9 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
     voiceMode,
     recognizer: voice.recognizer,
     synthesizer: voice.synthesizer,
-    createCheckinRunner: () =>
-      createCheckinRunner({
+    createCheckinRunner: () => {
+      checkinActive = true;
+      const runner = createCheckinRunner({
         recognizer: voice.recognizer,
         synthesizer: voice.synthesizer,
         devices,
@@ -170,7 +205,20 @@ export function createContainer(options: ContainerOptions = {}): AppContainer {
           evaluateFromState(state, { at: clock.now().toISOString(), history }),
         script: checkinScripts.daily,
         metrics,
-      }),
+        // Read once when the check-in is created; the adapters then follow the stored value.
+        language: () => {
+          voiceLanguage.current = getLocale();
+          return voiceLanguage.current;
+        },
+      });
+      return {
+        ...runner,
+        dispose: () => {
+          checkinActive = false;
+          runner.dispose();
+        },
+      };
+    },
     devMetrics,
     wesadSeries: WESAD_SERIES,
     // Bounded: a seed that fails or does not settle in SEED_TIMEOUT_MS rejects, and the app renders anyway.

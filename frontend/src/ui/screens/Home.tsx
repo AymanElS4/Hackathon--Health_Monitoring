@@ -9,6 +9,7 @@ import { CHECKIN_PATH, HISTORY_PATH, HOME_REFRESH_MS } from '../../config/consta
 import { LUNAR_CYCLE_OFFSET_DAYS, LUNAR_DARK_DAYS, LUNAR_LIGHT_DAYS, MISSION } from '../../config/mission';
 import { t } from '../../config/messages.es';
 import { useAppServices } from '../AppServices';
+import { useLocale } from '../useLocale';
 import { LazyBodyViewer } from '../body3d/LazyBodyViewer';
 import { BottomNav } from '../components/BottomNav';
 import { Card } from '../components/Card';
@@ -52,9 +53,11 @@ export function Home() {
   /** Sensor tapped on the body; it is the viewer's focus and, in Phase 7, the highlighted metric row. */
   const [selectedSensor, setSelectedSensor] = useState<SensorKey | null>(null);
 
+  // Re-runs on a locale change: the voice model follows the language in use (FR: toggle on Home).
+  const locale = useLocale();
   useEffect(() => {
     preloadQuietly(() => container.recognizer.preload());
-  }, [container]);
+  }, [container, locale]);
 
   useEffect(() => {
     let active = true;

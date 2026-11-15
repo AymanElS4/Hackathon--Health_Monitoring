@@ -21,6 +21,12 @@ export type StepId =
   | 'summary'
   | 'next_activity';
 
+/** Vosk word lists of one listening step, per voice language (006). */
+export interface StepGrammar {
+  readonly es: readonly string[];
+  readonly en: readonly string[];
+}
+
 /** One step of the script. The script is data; the reducer executes it. */
 export interface CheckinStep {
   id: StepId;
@@ -29,8 +35,8 @@ export interface CheckinStep {
   messageKey: string;
   /** Which parser reading applies to the answer. */
   parse?: StepKind;
-  /** Vosk grammar for the listening phase. */
-  grammar?: readonly string[];
+  /** Vosk grammar for the listening phase, one word list per voice language. */
+  grammar?: StepGrammar;
   /** Body sensor to highlight while the step runs; `null` clears the focus. */
   focus?: SensorKey | null;
   indicator?: Indicator;

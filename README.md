@@ -80,14 +80,19 @@ larger.
 
 ### Voice model (Vosk)
 
-The Spanish model archive is not in the repository. To rebuild the published parts:
+Vita speaks and listens in the language chosen with the ES | EN toggle (fixed for the length of a
+check-in). There is one model per language; the archives are not in the repository. To rebuild the
+published parts:
 
-1. Download `vosk-model-small-es-0.42.tar.gz` from https://alphacephei.com/vosk/models.
-2. Put it in `frontend/models-src/vosk/`.
-3. Run `npm run split:model -w @base-vital/frontend`.
+1. Download `vosk-model-small-es-0.42.tar.gz` and `vosk-model-small-en-us-0.15.zip` from
+   https://alphacephei.com/vosk/models. Repack the English zip as a `.tar.gz` whose top folder is
+   `vosk-model-small-en-us-0.15/`.
+2. Spanish: put the archive in `frontend/models-src/vosk/` and run
+   `npm run split:model -w @base-vital/frontend`.
+3. English: `cd frontend && npx tsx scripts/split-model.ts <path>/vosk-model-small-en-us-0.15.tar.gz public/models/vosk/en`.
 
 The script writes the parts and `manifest.json` (with the SHA-256 of the whole archive) to
-`frontend/public/models/vosk/parts/`. The app joins the parts in the browser and checks the hash.
+`frontend/public/models/vosk/parts/` (Spanish) or `frontend/public/models/vosk/en/` (English). The app joins the parts in the browser and checks the hash.
 If a part is missing or corrupt, the check-in still works with captions and big buttons.
 
 ### Developer URL flags
@@ -156,7 +161,8 @@ The app ships with derived data only. Raw datasets are not in the repository.
     Resource for Complex Physiologic Signals", Circulation 101(23):e215–e220, 2000.
 - **Body mesh:** MakeHuman base mesh (hm08), CC0 1.0 Universal. Only the `body` group is used. There
   is no face texture and no likeness.
-- **Speech recognition:** Vosk model `vosk-model-small-es-0.42`, Apache 2.0 (alphacephei.com/vosk).
+- **Speech recognition:** Vosk models `vosk-model-small-es-0.42` and `vosk-model-small-en-us-0.15`,
+  Apache 2.0 (alphacephei.com/vosk).
   The `vosk-browser` library is Apache-2.0.
 - **Fonts:** Inter via `@fontsource/inter`, SIL Open Font License 1.1.
 - **Icons:** `lucide-react`, ISC license.

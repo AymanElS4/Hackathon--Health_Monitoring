@@ -1,6 +1,26 @@
-import { describe, expect, it, vi } from 'vitest';
-import { VoskRecognizer } from '../../../src/adapters/vosk/VoskRecognizer';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import {
+  VoskRecognizer,
+  type AudioContextHandle,
+  type VoiceLanguage,
+  type VoskModelHandle,
+  type VoskRecognizerHandle,
+} from '../../../src/adapters/vosk/VoskRecognizer';
 import { VOSK_FAKE_SAMPLE_RATE, createVoskWithFakes, flush } from './voskFakes';
+
+interface FakeHandle extends VoskRecognizerHandle {
+  listeners: Record<string, (m: { result?: { text?: string } }) => void>;
+}
+/** A recognizer handle that records its event listeners so a test can emit results. */
+function fakeHandle(): FakeHandle {
+  const listeners: FakeHandle['listeners'] = {};
+  return {
+    listeners,
+    on: vi.fn((e: string, l: (m: { result?: { text?: string } }) => void) => { listeners[e] = l; }),
+    acceptWaveform: vi.fn(),
+    remove: vi.fn(),
+  } as unknown as FakeHandle;
+}
 
 const TIMEOUT_MS = 1000;
 
@@ -245,5 +265,143 @@ describe('VoskRecognizer model loading', () => {
     });
     await expect(rec.listen(['si'], { timeoutMs: 5 })).resolves.toBeNull();
     expect(createModel).not.toHaveBeenCalled();
+  });
+});
+
+describe('VoskRecognizer language (es / en)', () => {
+  const ES_URL = 'http://localhost:4173/models/vosk/parts/manifest.json';
+  const EN_URL = 'http://localhost:4173/models/vosk/en/manifest.json';
+
+  beforeEach(() => {
+    vi.stubGlobal('location', { href: 'http://localhost:4173/' });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** Two fake models (one per manifest URL), with in-memory audio and a per-model handle. */
+  function bilingualSetup(opts: { failFirstEnglishLoad?: boolean; language?: boolean } = {}) {
+    const state: { language: VoiceLanguage } = { language: 'es' };
+    const handles = new Map<string, FakeHandle>();
+    let englishLoads = 0;
+    const loadModelUrl = vi.fn(async (u: string) => {
+      if (u === EN_URL) {
+        englishLoads += 1;
+        if (opts.failFirstEnglishLoad && englishLoads === 1) throw new Error('missing part');
+      }
+      return `blob:${u}`;
+    });
+    const createModel = vi.fn(async (blobUrl: string) => {
+      const ctor = vi.fn(function () {
+        const handle = fakeHandle();
+        handles.set(blobUrl, handle);
+        return handle;
+      });
+      return { KaldiRecognizer: ctor, terminate: vi.fn() } as unknown as VoskModelHandle;
+    });
+    const revokeObjectURL = vi.fn();
+    const track = { stop: vi.fn() };
+    const stream = { getTracks: () => [track] } as unknown as MediaStream;
+    const getUserMedia = vi.fn(async () => stream);
+    const node = { onaudioprocess: null, connect: vi.fn(), disconnect: vi.fn() };
+    const ctx = {
+      sampleRate: VOSK_FAKE_SAMPLE_RATE,
+      destination: {},
+      createMediaStreamSource: () => ({ connect: vi.fn(), disconnect: vi.fn() }),
+      createScriptProcessor: () => node,
+      close: vi.fn(async () => undefined),
+    } as unknown as AudioContextHandle;
+    const rec = new VoskRecognizer({
+      ...(opts.language === false ? {} : { language: () => state.language }),
+      loadModelUrl,
+      createModel,
+      revokeObjectURL,
+      getUserMedia,
+      audioContextFactory: () => ctx,
+    });
+    /** The handle of the recognizer built by the last listen on the given model blob. */
+    const handleOf = (manifestUrl: string) => handles.get(`blob:${manifestUrl}`)!;
+    return { state, rec, loadModelUrl, createModel, revokeObjectURL, handleOf };
+  }
+
+  it('language en loads the English manifest, resolved against location', async () => {
+    const s = bilingualSetup();
+    s.state.language = 'en';
+    await s.rec.preload();
+    expect(s.loadModelUrl).toHaveBeenCalledWith(EN_URL);
+    expect(s.loadModelUrl).not.toHaveBeenCalledWith(ES_URL);
+  });
+
+  it('defaults to the Spanish manifest when no language option is given', async () => {
+    const s = bilingualSetup({ language: false });
+    await s.rec.preload();
+    expect(s.loadModelUrl).toHaveBeenCalledTimes(1);
+    expect(s.loadModelUrl).toHaveBeenCalledWith(ES_URL);
+  });
+
+  it('an explicit manifestUrl wins over the language', async () => {
+    const loadModelUrl = vi.fn(async () => 'blob:x');
+    const rec = new VoskRecognizer({
+      manifestUrl: 'http://x/custom.json',
+      language: () => 'en',
+      loadModelUrl,
+      createModel: vi.fn(async () => ({}) as never),
+      revokeObjectURL: vi.fn(),
+    });
+    await rec.preload();
+    expect(loadModelUrl).toHaveBeenCalledWith('http://x/custom.json');
+  });
+
+  it('switching es to en loads the second model once and reuses each model afterwards', async () => {
+    const s = bilingualSetup();
+    const grammar = ['si', 'no'];
+    const spanish = s.rec.listen(grammar, { timeoutMs: TIMEOUT_MS });
+    await flush();
+    s.handleOf(ES_URL).listeners.result!({ result: { text: 'si' } });
+    await expect(spanish).resolves.toBe('si');
+    expect(s.createModel).toHaveBeenCalledTimes(1);
+
+    s.state.language = 'en';
+    const english = s.rec.listen(grammar, { timeoutMs: TIMEOUT_MS });
+    await flush();
+    s.handleOf(EN_URL).listeners.result!({ result: { text: 'yes' } });
+    await expect(english).resolves.toBe('yes');
+    expect(s.loadModelUrl).toHaveBeenCalledTimes(2);
+    expect(s.createModel).toHaveBeenCalledTimes(2);
+    expect(s.loadModelUrl).toHaveBeenNthCalledWith(2, EN_URL);
+    // The English recognizer comes from the English model, never from the Spanish one.
+    const enCtor = (s.createModel.mock.results[1]!.value as Promise<{ KaldiRecognizer: Mock }>);
+    expect((await enCtor).KaldiRecognizer).toHaveBeenCalledWith(VOSK_FAKE_SAMPLE_RATE, JSON.stringify(grammar));
+
+    s.state.language = 'es';
+    const again = s.rec.listen(grammar, { timeoutMs: TIMEOUT_MS });
+    await flush();
+    s.handleOf(ES_URL).listeners.result!({ result: { text: 'no' } });
+    await expect(again).resolves.toBe('no');
+    s.state.language = 'en';
+    const enAgain = s.rec.listen(grammar, { timeoutMs: TIMEOUT_MS });
+    await flush();
+    s.handleOf(EN_URL).listeners.result!({ result: { text: 'no' } });
+    await expect(enAgain).resolves.toBe('no');
+
+    // Each model is loaded once: no reload when switching back and forth.
+    expect(s.loadModelUrl).toHaveBeenCalledTimes(2);
+    expect(s.createModel).toHaveBeenCalledTimes(2);
+    s.rec.release();
+  });
+
+  it('a failed English load is retried on the next listen', async () => {
+    const s = bilingualSetup({ failFirstEnglishLoad: true });
+    s.state.language = 'en';
+    await expect(s.rec.listen(['si'], { timeoutMs: 5 })).resolves.toBeNull();
+    expect(s.loadModelUrl).toHaveBeenCalledTimes(1);
+
+    const retry = s.rec.listen(['si'], { timeoutMs: TIMEOUT_MS });
+    await flush();
+    expect(s.loadModelUrl).toHaveBeenCalledTimes(2);
+    expect(s.loadModelUrl).toHaveBeenLastCalledWith(EN_URL);
+    s.handleOf(EN_URL).listeners.result!({ result: { text: 'yes' } });
+    await expect(retry).resolves.toBe('yes');
+    s.rec.release();
   });
 });

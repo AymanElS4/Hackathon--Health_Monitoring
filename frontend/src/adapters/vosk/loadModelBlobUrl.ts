@@ -1,9 +1,11 @@
-/**
- * Downloads the split Vosk model (manifest + parts, same origin), verifies sizes and SHA-256 and
- * returns a blob: URL for vosk-browser (005 FR-015). Any problem throws: the caller treats it as
- * "model unavailable".
- */
-export const VOSK_MANIFEST_URL = '/models/vosk/parts/manifest.json';
+/** Root-relative manifest of each check-in language's split Vosk model (same origin). */
+export const VOSK_MANIFEST_URLS = {
+  es: '/models/vosk/parts/manifest.json',
+  en: '/models/vosk/en/manifest.json',
+} as const;
+
+/** Spanish manifest, kept for callers that predate the per-language map. */
+export const VOSK_MANIFEST_URL = VOSK_MANIFEST_URLS.es;
 
 export interface ModelManifest {
   file: string;
@@ -23,6 +25,11 @@ const HEX_BYTE_WIDTH = 2;
 const toHex = (buf: ArrayBuffer): string =>
   Array.from(new Uint8Array(buf), (b) => b.toString(HEX_RADIX).padStart(HEX_BYTE_WIDTH, '0')).join('');
 
+/**
+ * Downloads the split Vosk model (manifest + parts, same origin), verifies sizes and SHA-256 and
+ * returns a blob: URL for vosk-browser (005 FR-015). Any problem throws: the caller treats it as
+ * "model unavailable".
+ */
 export async function loadModelBlobUrl(manifestUrl: string, deps: LoadModelDeps = {}): Promise<string> {
   const fetchFn = deps.fetchFn ?? ((u: string) => fetch(u));
   const digest = deps.digest ?? ((d: ArrayBuffer) => crypto.subtle.digest('SHA-256', d));

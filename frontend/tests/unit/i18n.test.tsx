@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getLocale, resetLocaleCache, setLocale, LOCALE_STORAGE_KEY } from '../../src/config/i18n';
-import { messages, t, tVoice } from '../../src/config/messages.es';
+import { formatNumber, messages, t, tVoice } from '../../src/config/messages.es';
 import { MESSAGES_EN } from '../../src/config/messages.en';
 import { LanguageToggle } from '../../src/ui/components/LanguageToggle';
 
@@ -35,12 +35,50 @@ describe('locale store', () => {
   });
 });
 
+describe('formatNumber', () => {
+  it('uses a decimal comma in Spanish and a decimal point in English', () => {
+    expect(formatNumber(7.5)).toBe('7,5');
+    expect(formatNumber(7.5, 'es')).toBe('7,5');
+    expect(formatNumber(7.5, 'en')).toBe('7.5');
+  });
+
+  it('keeps at most one decimal and no grouping in both languages', () => {
+    expect(formatNumber(16, 'en')).toBe('16');
+    expect(formatNumber(7.25, 'en')).toBe('7.3');
+    expect(formatNumber(7.25, 'es')).toBe('7,3');
+  });
+});
+
 describe('tVoice', () => {
-  it('is always Spanish while the UI is English', () => {
+  it('defaults to Spanish whatever the UI locale is', () => {
     setLocale('en');
     expect(tVoice('verdict.ok')).toBe(messages['verdict.ok']);
     expect(tVoice('confirm.sleep', { hours: 7 })).toContain('dormiste');
     if (MESSAGES_EN['verdict.ok']) expect(t('verdict.ok')).toBe(MESSAGES_EN['verdict.ok']);
+  });
+
+  it('speaks English when asked for English', () => {
+    expect(tVoice('greet', undefined, 'en')).toBe(MESSAGES_EN.greet);
+    expect(tVoice('verdict.ok', undefined, 'en')).toBe(MESSAGES_EN['verdict.ok']);
+  });
+
+  it('formats numbers in the spoken language: 7.5 is "7.5" in English and "7,5" in Spanish', () => {
+    expect(tVoice('confirm.sleep', { hours: 7.5 }, 'en')).toBe(
+      'I heard you slept 7.5 hours. Is that right?',
+    );
+    expect(tVoice('confirm.sleep', { hours: 7.5 }, 'es')).toBe(
+      'Escuché que dormiste 7,5 horas. ¿Es correcto?',
+    );
+    expect(tVoice('confirm.sleep', { hours: 7.5 })).toContain('7,5');
+  });
+});
+
+describe('t follows the UI locale for numbers', () => {
+  it('formats 7.5 as "7.5" in English and "7,5" in Spanish', () => {
+    setLocale('en');
+    expect(t('confirm.sleep', { hours: 7.5 })).toContain('7.5');
+    setLocale('es');
+    expect(t('confirm.sleep', { hours: 7.5 })).toContain('7,5');
   });
 });
 

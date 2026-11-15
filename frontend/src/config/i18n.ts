@@ -1,4 +1,7 @@
-/** UI locale store: tiny external store (useSyncExternalStore-compatible). Voice is always Spanish. */
+/**
+ * UI locale store: tiny external store (useSyncExternalStore-compatible).
+ * The screen follows this locale; the voice follows the language chosen when a check-in starts (006).
+ */
 export type Locale = 'es' | 'en';
 export const LOCALE_STORAGE_KEY = 'bv.locale';
 export const DEFAULT_LOCALE: Locale = 'en';
