@@ -1,0 +1,129 @@
+{
+  "planHash": "c9e42844c0c53319068b8d66d56d7c960713a320fed623a0eb20aa0d4a816dc7",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-11-15T17:16:19.2056984Z",
+  "retryCount": 1,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "frontend-build",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E base-vital@0.0.0 build\r\n\u003E npm run build -w @base-vital/frontend\r\n\r\n\r\n\u003E @base-vital/frontend@0.0.0 build\r\n\u003E tsc --noEmit \u0026\u0026 tsx scripts/check-model.ts \u0026\u0026 vite build \u0026\u0026 tsx scripts/check-dist-size.ts\r\n\r\nmodel: C:\\Users\\Ayman El Salous Mnz\\Documents\\GitHub\\Hackathon--Health_Monitoring\\frontend\\public\\models\\body.glb\r\ntriangles: 26756 (max 30000)\r\nsize: 0.47 MiB (max 3 MiB)\r\nfront camera: (-0.000, 0.833, 3.631) m\r\nsensor_sleep: 2.0 mm from body surface (max 30 mm), visible from front\r\nsensor_pulse: 2.0 mm from body surface (max 30 mm), visible from front\r\nsensor_pressure: 2.0 mm from body surface (max 30 mm), visible from front\r\nsensor_temperature: 0.9 mm from body surface (max 30 mm), visible from front\r\nsensor_oxygen: 2.0 mm from body surface (max 30 mm), visible from front\r\nPASS\r\n\u001B[36mvite v5.4.21 \u001B[32mbuilding for production...\u001B[36m\u001B[39m\r\ntransforming...\r\n\u001B[32m\u2713\u001B[39m 2798 modules transformed.\r\nrendering chunks...\r\ncomputing gzip size...\r\n\u001B[2mdist/\u001B[22m\u001B[32mregisterSW.js                                 \u001B[39m\u001B[1m\u001B[2m    0.13 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32mmanifest.webmanifest                          \u001B[39m\u001B[1m\u001B[2m    0.23 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32mindex.html                                    \u001B[39m\u001B[1m\u001B[2m    0.53 kB\u001B[22m\u001B[1m\u001B[22m\u001B[2m \u2502 gzip:     0.32 kB\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32massets/inter-latin-400-normal-C38fXH4l.woff2  \u001B[39m\u001B[1m\u001B[2m   23.66 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32massets/inter-latin-700-normal-Yt3aPRUw.woff2  \u001B[39m\u001B[1m\u001B[2m   24.36 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32massets/inter-latin-600-normal-LgqL8muc.woff2  \u001B[39m\u001B[1m\u001B[2m   24.45 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32massets/inter-latin-400-normal-CyCys3Eg.woff   \u001B[39m\u001B[1m\u001B[2m   30.70 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[32massets/inter-latin-600-normal-CiBQ2DWP.woff   \u001B[39m\u001B[1m\u001B[2m   31.26 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[33m\r\n(!) Some chunks are larger than 500 kB after minification. Consider:\r\n- Using dynamic import() to code-split the application\r\n- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\r\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\u001B[39m\r\n\u001B[2mdist/\u001B[22m\u001B[32massets/inter-latin-700-normal-BLAVimhd.woff   \u001B[39m\u001B[1m\u001B[2m   31.32 kB\u001B[22m\u001B[1m\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[35massets/index-AXZGbNZ7.css                     \u001B[39m\u001B[1m\u001B[2m   16.66 kB\u001B[22m\u001B[1m\u001B[22m\u001B[2m \u2502 gzip:     4.22 kB\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[36massets/index-DUh3NLhS.js                      \u001B[39m\u001B[1m\u001B[2m  314.72 kB\u001B[22m\u001B[1m\u001B[22m\u001B[2m \u2502 gzip:    95.51 kB\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[36massets/BodyViewer-BIu8QbQa.js                 \u001B[39m\u001B[1m\u001B[33m  983.34 kB\u001B[39m\u001B[22m\u001B[2m \u2502 gzip:   265.42 kB\u001B[22m\r\n\u001B[2mdist/\u001B[22m\u001B[36massets/vosk-D5l2xFjy.js                       \u001B[39m\u001B[1m\u001B[33m5,786.41 kB\u001B[39m\u001B[22m\u001B[2m \u2502 gzip: 2,346.08 kB\u001B[22m\r\n\u001B[32m\u2713 built in 10.58s\u001B[39m\r\n\r\nPWA v2.0.0\r\nmode      generateSW\r\nprecache  24 entries (47825.45 KiB)\r\nfiles generated\r\n  dist/sw.js\r\n  dist/workbox-9c191d2f.js\r\ndist size OK; largest file: models\\vosk\\parts\\vosk-model-small-es-0.42.tar.gz.part00 (20971520 bytes)\r\n",
+        "durationMs": 21507
+      },
+      {
+        "name": "tests-pass",
+        "kind": "process",
+        "verificationMethod": "test-results",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E base-vital@0.0.0 test\r\n\u003E npm test --workspaces --if-present\r\n\r\n\r\n\u003E @base-vital/contracts@0.0.0 test\r\n\u003E vitest run --passWithNoTests\r\n\r\n\r\n\u001B[1m\u001B[7m\u001B[36m RUN \u001B[39m\u001B[27m\u001B[22m \u001B[36mv2.1.9 \u001B[39m\u001B[90mC:/Users/Ayman El Salous Mnz/Documents/GitHub/Hackathon--Health_Monitoring/libs/contracts\u001B[39m\r\n\r\n \u001B[32m\u2713\u001B[39m tests/contracts.test.ts \u001B[2m(\u001B[22m\u001B[2m31 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 18\u001B[2mms\u001B[22m\u001B[39m\r\n\r\n\u001B[2m Test Files \u001B[22m \u001B[1m\u001B[32m1 passed\u001B[39m\u001B[22m\u001B[90m (1)\u001B[39m\r\n\u001B[2m      Tests \u001B[22m \u001B[1m\u001B[32m31 passed\u001B[39m\u001B[22m\u001B[90m (31)\u001B[39m\r\n\u001B[2m   Start at \u001B[22m 12:15:36\r\n\u001B[2m   Duration \u001B[22m 794ms\u001B[2m (transform 100ms, setup 0ms, collect 140ms, tests 18ms, environment 0ms, prepare 235ms)\u001B[22m\r\n\r\n\r\n\u003E @base-vital/health-rules@0.0.0 test\r\n\u003E vitest run --passWithNoTests\r\n\r\n\r\n\u001B[1m\u001B[7m\u001B[36m RUN \u001B[39m\u001B[27m\u001B[22m \u001B[36mv2.1.9 \u001B[39m\u001B[90mC:/Users/Ayman El Salous Mnz/Documents/GitHub/Hackathon--Health_Monitoring/libs/health-rules\u001B[39m\r\n\r\n \u001B[32m\u2713\u001B[39m tests/levels.test.ts \u001B[2m(\u001B[22m\u001B[2m46 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 16\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/thresholds.test.ts \u001B[2m(\u001B[22m\u001B[2m14 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 16\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/minSd.test.ts \u001B[2m(\u001B[22m\u001B[2m1 test\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 4\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/verdict.test.ts \u001B[2m(\u001B[22m\u001B[2m28 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 26\u001B[2mms\u001B[22m\u001B[39m\r\n\r\n\u001B[2m Test Files \u001B[22m \u001B[1m\u001B[32m4 passed\u001B[39m\u001B[22m\u001B[90m (4)\u001B[39m\r\n\u001B[2m      Tests \u001B[22m \u001B[1m\u001B[32m89 passed\u001B[39m\u001B[22m\u001B[90m (89)\u001B[39m\r\n\u001B[2m   Start at \u001B[22m 12:15:38\r\n\u001B[2m   Duration \u001B[22m 951ms\u001B[2m (transform 354ms, setup 0ms, collect 819ms, tests 63ms, environment 1ms, prepare 885ms)\u001B[22m\r\n\r\n\r\n\u003E @base-vital/frontend@0.0.0 test\r\n\u003E vitest run\r\n\r\n\r\n\u001B[1m\u001B[7m\u001B[36m RUN \u001B[39m\u001B[27m\u001B[22m \u001B[36mv2.1.9 \u001B[39m\u001B[90mC:/Users/Ayman El Salous Mnz/Documents/GitHub/Hackathon--Health_Monitoring/frontend\u001B[39m\r\n\r\n \u001B[32m\u2713\u001B[39m tests/unit/checkin/reducer.confirm.test.ts \u001B[2m(\u001B[22m\u001B[2m17 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 29\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/checkin/reducer.flow.test.ts \u001B[2m(\u001B[22m\u001B[2m38 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 37\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/buildHomeView.test.ts \u001B[2m(\u001B[22m\u001B[2m22 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 27\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/SensorDot.test.tsx \u001B[2m(\u001B[22m\u001B[2m28 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 633\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/History.test.tsx \u001B[2m(\u001B[22m\u001B[2m9 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 653\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/checkModel.test.ts \u001B[2m(\u001B[22m\u001B[2m31 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 32\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/runCheckin.save.test.ts \u001B[2m(\u001B[22m\u001B[2m6 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 271\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/runCheckin.test.ts \u001B[2m(\u001B[22m\u001B[2m8 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 727\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/adapters/voice.contract.test.ts \u001B[2m(\u001B[22m\u001B[2m17 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 2104\u001B[2mms\u001B[22m\u001B[39m\r\n   \u001B[33m\u001B[2m\u2713\u001B[22m\u001B[39m FakeVoice\u001B[2m \u003E \u001B[22mrecognizer in never_understands mode\u001B[2m \u003E \u001B[22mlisten always resolves null \u001B[33m1007\u001B[2mms\u001B[22m\u001B[39m\r\n   \u001B[33m\u001B[2m\u2713\u001B[22m\u001B[39m FakeVoice\u001B[2m \u003E \u001B[22mrecognizer in never_understands mode\u001B[2m \u003E \u001B[22mnever reports listening and ignores answer() \u001B[33m1015\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/bodyViewerModel.test.ts \u001B[2m(\u001B[22m\u001B[2m17 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 23\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/DemoScenarioSelect.test.tsx \u001B[2m(\u001B[22m\u001B[2m6 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 572\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/parsing/parseUtterance.test.ts \u001B[2m(\u001B[22m\u001B[2m51 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 32\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/homeScreen.test.tsx \u001B[2m(\u001B[22m\u001B[2m26 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 3294\u001B[2mms\u001B[22m\u001B[39m\r\n   \u001B[33m\u001B[2m\u2713\u001B[22m\u001B[39m Home screen\u001B[2m \u003E \u001B[22mshows the criterion note exactly once when a check of today exists \u001B[33m501\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/home.test.tsx \u001B[2m(\u001B[22m\u001B[2m22 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 1114\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/unit/adapters/voskRecognizer.test.ts \u001B[2m(\u001B[22m\u001B[2m11 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[90m 82\u001B[2mms\u001B[22m\u001B[39m\r\n \u001B[32m\u2713\u001B[39m tests/ui/bigButtons.test.tsx \u001B[2m(\u001B[22m\u001B[2m13 tests\u001B[22m\u001B[2m)\u001B[22m\u001B[33m 1106\u001B[2mms\u001B[22m\u001B[39m\r\n   \u001B[33m\u001B[2m\u2713\u001B[22m\u001B[39m BigButtons\u001B[2m \u003E \u001B[22mask_sleep shows 33 \n\u2026[truncated]",
+        "durationMs": 37726,
+        "testResults": {
+          "testFramework": "vitest",
+          "runnerDetectedFrom": "package_json",
+          "testsTotal": 716,
+          "testsPassed": 716,
+          "testsFailed": 0,
+          "testsSkipped": 0,
+          "parseFailed": false
+        }
+      },
+      {
+        "name": "frontend-lint",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E base-vital@0.0.0 lint\r\n\u003E eslint . --ext .ts,.tsx\r\n\r\n",
+        "durationMs": 5044
+      },
+      {
+        "name": "checkin-route-serves",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 200\n\u003C!doctype html\u003E\r\n\u003Chtml lang=\u0022es\u0022\u003E\r\n  \u003Chead\u003E\n    \u003Cscript type=\u0022module\u0022\u003Eimport { injectIntoGlobalHook } from \u0022/@react-refresh\u0022;\ninjectIntoGlobalHook(window);\nwindow.$RefreshReg$ = () =\u003E {};\nwindow.$RefreshSig$ = () =\u003E (type) =\u003E type;\u003C/script\u003E\n\n    \u003Cscript type=\u0022module\u0022 src=\u0022/@vite/client\u0022\u003E\u003C/script\u003E\n\r\n    \u003Cmeta charset=\u0022UTF-8\u0022 /\u003E\r\n    \u003Cmeta name=\u0022viewport\u0022 content=\u0022width=device-width, initial-scale=1.0\u0022 /\u003E\r\n    \u003Ctitle\u003EBase Vital\u003C/title\u003E\r\n  \u003C/head\u003E\r\n  \u003Cbody\u003E\r\n    \u003Cdiv id=\u0022root\u0022\u003E\u003C/div\u003E\r\n    \u003Cscript type=\u0022module\u0022 src=\u0022/src/main.tsx\u0022\u003E\u003C/script\u003E\r\n  \u003C/body\u003E\r\n\u003C/html\u003E\r\n\n--- server output ---\n\r\n\u003E @base-vital/frontend@0.0.0 dev\r\n\u003E vite --host 127.0.0.1 --port 5176 --strictPort\r\n\r\n\r\n  \u001B[32m\u001B[1mVITE\u001B[22m v5.4.21\u001B[39m  \u001B[2mready in \u001B[0m\u001B[1m501\u001B[22m\u001B[2m\u001B[0m ms\u001B[22m\r\n\r\n  \u001B[32m\u279C\u001B[39m  \u001B[1mLocal\u001B[22m:   \u001B[36mhttp://127.0.0.1:\u001B[1m5176\u001B[22m/\u001B[39m\r\n",
+        "durationMs": 1725
+      }
+    ],
+    "executions": [
+      {
+        "source": "frontend-build",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "C:\\Users\\Ayman El Salous Mnz\\Documents\\GitHub\\Hackathon--Health_Monitoring",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "tests-pass",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "test"
+        ],
+        "cwd": "C:\\Users\\Ayman El Salous Mnz\\Documents\\GitHub\\Hackathon--Health_Monitoring",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "frontend-lint",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "lint"
+        ],
+        "cwd": "C:\\Users\\Ayman El Salous Mnz\\Documents\\GitHub\\Hackathon--Health_Monitoring",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "checkin-route-serves",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "dev",
+          "-w",
+          "@base-vital/frontend",
+          "--",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "5176",
+          "--strictPort"
+        ],
+        "cwd": "C:\\Users\\Ayman El Salous Mnz\\Documents\\GitHub\\Hackathon--Health_Monitoring",
+        "env": {},
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}

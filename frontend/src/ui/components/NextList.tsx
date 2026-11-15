@@ -1,11 +1,11 @@
 import { ArrowRight, Clock, Dumbbell, FlaskConical, HeartPulse, Rocket, Utensils, type LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { AgendaIcon } from '@base-vital/contracts';
 import type { HomeView } from '../../application/use-cases/buildHomeView';
-import { NEXT_MAX } from '../../config/constants';
+import { AGENDA_PATH, NEXT_MAX } from '../../config/constants';
 import { t } from '../../config/messages.es';
 import { Card } from './Card';
 import { CardHeader } from './CardHeader';
-import { SoonAction } from './SoonAction';
 
 export interface NextListProps {
   next: HomeView['next'];
@@ -31,10 +31,10 @@ export function NextList({ next, pendingToday }: NextListProps) {
         <CardHeader
           label={t('home.next')}
           trailing={
-            <SoonAction kind="link" className="inline-flex items-center gap-xs text-small font-semibold">
+            <Link to={AGENDA_PATH} className="inline-flex items-center gap-xs text-small font-semibold text-primary">
               {t('nav.agenda')}
               <ArrowRight aria-hidden="true" className="h-lg w-lg" />
-            </SoonAction>
+            </Link>
           }
         />
         <ul className="flex flex-col gap-sm">
