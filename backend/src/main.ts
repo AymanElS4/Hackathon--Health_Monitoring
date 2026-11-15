@@ -4,7 +4,8 @@ import { NestFactory } from '@nestjs/core';
 import type { Pool } from 'pg';
 import { AppModule } from './app.module';
 import { loadEnv, type Env } from './config/env';
-import { API_PREFIX, MIGRATIONS_DIR, STARTUP_DB_ATTEMPTS, STARTUP_DB_DELAY_MS } from './config/constants';
+import { MIGRATIONS_DIR, STARTUP_DB_ATTEMPTS, STARTUP_DB_DELAY_MS } from './config/constants';
+import { configureApp } from './adapters/http/configure-app';
 import { PG_POOL } from './adapters/postgres/pool';
 import { runMigrations, waitForDatabase } from './adapters/postgres/migrator';
 
@@ -26,7 +27,7 @@ async function bootstrap(): Promise<void> {
     logger: ['log', 'warn', 'error'],
     abortOnError: false,
   });
-  app.setGlobalPrefix(API_PREFIX);
+  configureApp(app);
   app.enableCors({
     origin: env.corsOrigins,
     methods: ['GET', 'POST'],

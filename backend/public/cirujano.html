@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title id="page-title"></title>
+  <link rel="stylesheet" href="/cirujano/assets/cirujano.css">
+  <script src="/cirujano/assets/messages.js"></script>
+  <script src="/cirujano/assets/cirujano.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1 id="app-title"></h1>
+      <p id="app-subtitle" class="muted"></p>
+    </div>
+    <button type="button" id="logout-button" class="button" hidden></button>
+  </header>
+
+  <main>
+    <section id="login-view" hidden>
+      <form id="code-form" class="card">
+        <label id="code-label" for="code-input"></label>
+        <input id="code-input" name="code" type="password" autocomplete="off" required>
+        <button type="submit" id="code-submit" class="button button-primary"></button>
+        <p id="code-error" class="error" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="crew-view" hidden>
+      <h2 id="crew-title"></h2>
+      <ul id="crew-list" class="crew-list"></ul>
+      <p id="crew-empty" class="muted" hidden></p>
+    </section>
+
+    <section id="summary-view" hidden>
+      <button type="button" id="back-button" class="button"></button>
+      <div id="summary"></div>
+    </section>
+
+    <p id="status" class="error" role="status"></p>
+  </main>
+</body>
+</html>
